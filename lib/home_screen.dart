@@ -6,27 +6,65 @@ class HomeScreen extends StatelessWidget{
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 42, 134, 191),
         title: Text('Home Screen'),
-        actions: [
+        centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu), 
+            onPressed: () => Scaffold.of(context).openDrawer()
+            ),
+        ),
 
-          //icon
+        actions: [
           IconButton(
             icon: Icon(Icons.search),
-            onPressed: (){
-            },
-            ),
-            IconButton(
+            onPressed: () {},
+          ),
+          IconButton(
             icon: Icon(Icons.share),
-            onPressed: () {
-            },
+            onPressed: () {},
           ),
           IconButton(
             icon: Icon(Icons.add),
-            onPressed: () {
-            },
+            onPressed: () {},
           ),
         ],
       ),
+
+      //sidebar menu
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
+            child: Text(
+              'Menu',
+            style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+
+          ListTile(
+              leading: Icon(Icons.home),
+              title: Text('Home'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.event),
+              title: Text('Events'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EventListPage()),
+                );
+              },
+            ),
+          ],
+            ),
+          ),
 
       body: Center(
         child: Column(
@@ -36,7 +74,9 @@ class HomeScreen extends StatelessWidget{
             width: 100,
             height: 100,
             color: Colors.greenAccent[300],
-            child: Center(child: Text ('Your List')),
+            child: Center(
+              child: Text ('Add Your Event Now'),
+            ),
             ),
           ],
         ),
