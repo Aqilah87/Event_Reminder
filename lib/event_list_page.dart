@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
-import 'add_event_page.dart';
+import 'home_screen.dart';
 
 class EventListPage extends StatefulWidget {
   @override
   _EventListPageState createState() => _EventListPageState();
 }
-
-class _EventListPageState extends State<EventListPage> {
-  List<Map<String, String>> events = [];
-
-  void addEvent(String title, String dateTime) {
-    setState(() {
-      events.add({'title': title, 'date': dateTime});
-    });
-  }
-
-  void deleteEvent(int index) {
-    setState(() {
-      events.removeAt(index);
-    });
-  }
-
+class _EventListPageState extends State<EventListPage>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,8 +15,17 @@ class _EventListPageState extends State<EventListPage> {
       centerTitle: true,
       ),
 
-            body: events.isEmpty
-          ? Center(
+            body: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: (){
+                print("Div clicked!");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder:(context) => HomeScreen()),
+                  );
+              },
+
+              child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -46,7 +40,7 @@ class _EventListPageState extends State<EventListPage> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    "Your Day, Perfectly Planned",
+                    "Your Day, Perfectly Plannned",
                     style: TextStyle(
                       fontSize: 30.0,
                       fontWeight: FontWeight.w500,
@@ -56,7 +50,7 @@ class _EventListPageState extends State<EventListPage> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "No events yet. Add some!",
+                    "No events yet.",
                     style: TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.w400,
@@ -66,35 +60,8 @@ class _EventListPageState extends State<EventListPage> {
                   ),
                 ],
               ),
-            )
-
-
-
-          : ListView.builder(
-              itemCount: events.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(events[index]['title']!),
-                  subtitle: Text(events[index]['date']!),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => deleteEvent(index),
-                  ),
-                );
-              },
             ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddEventPage()),
-          );
-          if (result != null) {
-            addEvent(result['title'], result['date']);
-          }
-        },
-      ),
+            ),
     );
-  }
-  }
+    }
+    }
