@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import 'event_list_page.dart';
+import 'package:reminder_test/home_screen.dart';
+import 'package:reminder_test/database/db_helper.dart';
+import 'package:reminder_test/notification_helper.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize database and notifications
+  await DbHelper.initDb();
+  await NotificationHelper.initialize();
+
   runApp(MyApp());
 }
 
@@ -10,8 +18,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Event Reminder',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: EventListPage(),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: HomeScreen(),
     );
   }
 }
