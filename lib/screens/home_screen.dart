@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:reminder_test/screens/add_event_page.dart';
 import 'event_list_page.dart';
 
 class HomeScreen extends StatelessWidget{
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -27,7 +30,12 @@ class HomeScreen extends StatelessWidget{
           ),
           IconButton(
             icon: Icon(Icons.add),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddEventPage()),
+              );
+            },
           ),
         ],
       ),

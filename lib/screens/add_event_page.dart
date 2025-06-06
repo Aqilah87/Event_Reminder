@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:reminder_test/database/db_helper.dart';
-import 'package:reminder_test/home_screen.dart';
-import 'package:reminder_test/notification_helper.dart'; // Make sure this exists
+import 'package:reminder_test/screens/home_screen.dart';
+import 'package:reminder_test/services/notification_helper.dart'; // Make sure this exists
 
 class AddEventPage extends StatefulWidget {
   final int? reminderId;
@@ -229,7 +229,6 @@ class _AddEventPageState extends State<AddEventPage> {
       });
     }
   }
-
   Future<void> _selectTime() async {
     TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -252,30 +251,36 @@ class _AddEventPageState extends State<AddEventPage> {
   }
 
   Future<void> _saveReminder() async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
-    final reminderData = {
-      'title': _titleController.text,
-      'description': _descriptionController.text,
-      'date': DateFormat('yyyy-MM-dd').format(_reminderTime),
-      'category': _categoryt,
-      'reminder_time': DateFormat('yyyy-MM-dd - kk:mm').format(_reminderTime),
-    };
-    if (widget.reminderId != null) {
-      await DbHelper.updateReminders(widget.reminderId!, reminderData);
-      NotificationHelper.scheduleNotification(
-        _titleController.text, _categoryt, _reminderTime
-      );
-    } else {
-      await DbHelper.addReminders(reminderData);
-      NotificationHelper.scheduleNotification(
-        _titleController.text, _categoryt, _reminderTime
-      );
-    }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-    );
+  if (!formKey.currentState!.validate()) return;
+
+  final reminderData = {
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'isActive': 1, // <-- Add this if you're using it in DB
+    'reminderTime': _reminderTime.toIso8601String(),
+    'category': _categoryt,
+  };
+
+  int id;
+  if (widget.reminderId != null) {
+    await DbHelper.updateReminders(widget.reminderId!, reminderData);
+    id = widget.reminderId!;
+  } else {
+    id = await DbHelper.addReminders(reminderData);
   }
+
+  // Now schedule the notification
+  await NotificationHelper.scheduleNotification(
+    id,
+    _titleController.text,
+    _descriptionController.text,
+    _reminderTime,
+  );
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => HomeScreen()),
+  );
+}
+
 }
