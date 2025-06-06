@@ -1,154 +1,183 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:reminder_test/database/db_helper.dart';
-import 'package:reminder_test/screens/home_screen.dart';
-import 'package:reminder_test/services/notification_helper.dart'; // Make sure this exists
+import '../models/event.dart';
 
 class AddEventPage extends StatefulWidget {
-  final int? reminderId;
-  const AddEventPage({super.key, this.reminderId});
+  const AddEventPage({Key? key}) : super(key: key);
 
   @override
-  State<AddEventPage> createState() => _AddEventPageState();
+  _AddEventPageState createState() => _AddEventPageState();
 }
 
 class _AddEventPageState extends State<AddEventPage> {
-  final formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  String _categoryt = "Work";
-  DateTime _reminderTime = DateTime.now();
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.reminderId != null) {
-      fetchreminder();
+  DateTime? _startDateTime;
+  DateTime? _endDateTime;
+  String? _reminderType;
+  String? _repeatOption;
+
+  final List<String> reminderTypes = ['Meeting', 'Birthday', 'Reminder', 'Anniversary'];
+  final List<String> repeatOptions = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
+
+  Future<DateTime?> _pickDateTime({required bool isStart}) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  void _saveEvent() {
+    if (_formKey.currentState!.validate()) {
+      if (_startDateTime == null || _endDateTime == null) {
+        _showSnackBar('Please select both start and end date/time.');
+        return;
+      }
+
+      if (_endDateTime!.isBefore(_startDateTime!)) {
+        _showSnackBar('End time must be after start time.');
+        return;
+      }
+
+      final newEvent = Event(
+        title: _titleController.text.trim(),
+        date: _startDateTime!,
+        // You can extend Event model to include end time, type, repeat, etc.
+      );
+
+      _showSnackBar('Event saved successfully!', isError: false);
+      Navigator.pop(context, newEvent);
     }
   }
 
-  Future<void> fetchreminder() async {
-    try {
-      final data = await DbHelper.getRemindersById(widget.reminderId!);
-      if (data != null) {
-        setState(() {
-          _titleController.text = data['title'];
-          _descriptionController.text = data['description'];
-          _reminderTime = DateTime.parse(data['reminder_time']);
-          _categoryt = data['category'];
-        });
-      }
-    } catch (e) {}
+  void _showSnackBar(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color.fromARGB(255, 42, 134, 191);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.black),
-        backgroundColor: Colors.white,
-        title: Text(widget.reminderId == null ? "Add Event" : "Edit Event",
-            style: TextStyle(color: Colors.black, fontSize: 20)),
-        centerTitle: true,
-        elevation: 0,
+        title: const Text('Add Event'),
+        backgroundColor: primaryColor,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Form(
-            key: formKey,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                buildInputCard(
-                  label: "Title",
-                  icon: Icons.title,
-                  child: TextFormField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Enter event title',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter a title";
-                      }
-                      return null;
-                    },
+                // Title
+                const Text('Event Title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter event title',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                   ),
+                  validator: (value) => value == null || value.isEmpty ? 'Please enter a title' : null,
                 ),
-                SizedBox(height: 20),
-                buildInputCard(
-                  label: "Description",
-                  icon: Icons.description,
-                  child: TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Enter description',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter a description";
-                      }
-                      return null;
-                    },
+                const SizedBox(height: 16),
+
+                // Start DateTime
+                const Text('Start Date & Time', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final picked = await _pickDateTime(isStart: true);
+                    if (picked != null) setState(() => _startDateTime = picked);
+                  },
+                  child: Text(_startDateTime == null
+                      ? 'Pick Start Date & Time'
+                      : _startDateTime.toString()),
+                ),
+                const SizedBox(height: 16),
+
+                // End DateTime
+                const Text('End Date & Time', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () async {
+                    final picked = await _pickDateTime(isStart: false);
+                    if (picked != null) setState(() => _endDateTime = picked);
+                  },
+                  child: Text(_endDateTime == null
+                      ? 'Pick End Date & Time'
+                      : _endDateTime.toString()),
+                ),
+                const SizedBox(height: 16),
+
+                // Reminder Type Dropdown
+                const Text('Reminder Type', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _reminderType,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  items: reminderTypes.map((type) =>
+                    DropdownMenuItem(value: type, child: Text(type))
+                  ).toList(),
+                  onChanged: (value) => setState(() => _reminderType = value),
+                  validator: (value) => value == null ? 'Please select a reminder type' : null,
                 ),
-                SizedBox(height: 20),
-                buildInputCard(
-                  label: "Category",
-                  icon: Icons.category,
-                  child: DropdownButtonFormField<String>(
-                    value: _categoryt,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Select category',
-                    ),
-                    items: <String>['Work', 'Personal', 'Shopping', 'Health', 'Others']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _categoryt = newValue!;
-                      });
-                    },
+                const SizedBox(height: 16),
+
+                // Repeat Dropdown
+                const Text('Repeat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _repeatOption,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  items: repeatOptions.map((option) =>
+                    DropdownMenuItem(value: option, child: Text(option))
+                  ).toList(),
+                  onChanged: (value) => setState(() => _repeatOption = value),
+                  validator: (value) => value == null ? 'Please select repeat option' : null,
                 ),
-                SizedBox(height: 20),
-                buildDateTimePicker(
-                  label: "Date",
-                  icon: Icons.calendar_today,
-                  displayValue: DateFormat('yyyy-MM-dd').format(_reminderTime),
-                  onPressed: _selectDate,
-                ),
-                SizedBox(height: 10),
-                buildDateTimePicker(
-                  label: "Time",
-                  icon: Icons.access_time,
-                  displayValue: DateFormat('hh:mm a').format(_reminderTime),
-                  onPressed: _selectTime,
-                ),
-                SizedBox(height: 10),
+                const SizedBox(height: 32),
+
+                // Save Button
                 Center(
                   child: ElevatedButton(
+                    onPressed: _saveEvent,
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
+                      backgroundColor: primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: _saveReminder,
-                    child: Text("Save Reminder"),
+                    child: const Text('Save Event', style: TextStyle(fontSize: 18)),
                   ),
                 ),
               ],
@@ -158,129 +187,4 @@ class _AddEventPageState extends State<AddEventPage> {
       ),
     );
   }
-
-  Widget buildInputCard({required String label, required IconData icon, required Widget child}) {
-    return Card(
-      elevation: 6,
-      color: Colors.teal.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Colors.teal),
-                SizedBox(width: 10),
-                Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            SizedBox(height: 10),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildDateTimePicker({
-    required String label,
-    required IconData icon,
-    required String displayValue,
-    required Function() onPressed,
-  }) {
-    return Card(
-      elevation: 6,
-      color: Colors.teal.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.teal),
-        title: Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        subtitle: Text(displayValue.isEmpty ? 'Select Date & Time' : displayValue),
-        trailing: TextButton(
-          onPressed: onPressed,
-          child: Text(displayValue, style: TextStyle(color: Colors.teal)),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _selectDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _reminderTime,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2030),
-    );
-    if (picked != null) {
-      setState(() {
-        _reminderTime = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          _reminderTime.hour,
-          _reminderTime.minute,
-        );
-      });
-    }
-  }
-  Future<void> _selectTime() async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: _reminderTime.hour,
-        minute: _reminderTime.minute,
-      ),
-    );
-    if (picked != null) {
-      setState(() {
-        _reminderTime = DateTime(
-          _reminderTime.year,
-          _reminderTime.month,
-          _reminderTime.day,
-          picked.hour,
-          picked.minute,
-        );
-      });
-    }
-  }
-
-  Future<void> _saveReminder() async {
-  if (!formKey.currentState!.validate()) return;
-
-  final reminderData = {
-    'title': _titleController.text,
-    'description': _descriptionController.text,
-    'isActive': 1, // <-- Add this if you're using it in DB
-    'reminderTime': _reminderTime.toIso8601String(),
-    'category': _categoryt,
-  };
-
-  int id;
-  if (widget.reminderId != null) {
-    await DbHelper.updateReminders(widget.reminderId!, reminderData);
-    id = widget.reminderId!;
-  } else {
-    id = await DbHelper.addReminders(reminderData);
-  }
-
-  // Now schedule the notification
-  await NotificationHelper.scheduleNotification(
-    id,
-    _titleController.text,
-    _descriptionController.text,
-    _reminderTime,
-  );
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => HomeScreen()),
-  );
-}
-
 }
