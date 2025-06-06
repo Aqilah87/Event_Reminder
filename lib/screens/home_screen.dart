@@ -2,46 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:reminder_test/main.dart';
 import 'event_list_page.dart';
 import 'add_event_page.dart' as add_event_lib;
+import '../models/event.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<Event> _events = [];
+
+  void _navigateToAddEventPage() async {
+    final newEvent = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => add_event_lib.AddEventPage(),
+      ),
+    );
+
+    if (newEvent != null && newEvent is Event) {
+      setState(() {
+        _events.add(newEvent);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 42, 134, 191),
-        title: Text(
+        backgroundColor: const Color.fromARGB(255, 42, 134, 191),
+        title: const Text(
           'Home Screen',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: Icon(Icons.menu),
+            icon: const Icon(Icons.menu),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: const Icon(Icons.search),
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.share),
+            icon: const Icon(Icons.share),
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => add_event_lib.AddEventPage(),
-                ),
-              );
-            },
+            icon: const Icon(Icons.add),
+            onPressed: _navigateToAddEventPage,
           ),
         ],
       ),
@@ -50,7 +66,7 @@ class HomeScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
               child: Text(
                 'Menu',
@@ -58,19 +74,19 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
+              leading: const Icon(Icons.home),
+              title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              leading: Icon(Icons.event),
-              title: Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
+              leading: const Icon(Icons.event),
+              title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => EventListPage(events: [])),
+                  MaterialPageRoute(builder: (context) => EventListPage(events: _events)),
                 );
               },
             ),
@@ -80,9 +96,9 @@ class HomeScreen extends StatelessWidget {
 
       body: Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 1200),
+            constraints: const BoxConstraints(maxWidth: 1200),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -98,9 +114,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                SizedBox(width: 15),
-
+                const SizedBox(width: 15),
                 // Call to action on right
                 Flexible(
                   flex: 1,
@@ -108,7 +122,7 @@ class HomeScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Add Your Event Now',
                         style: TextStyle(
                           fontSize: 48,
@@ -117,8 +131,8 @@ class HomeScreen extends StatelessWidget {
                           height: 1.1,
                         ),
                       ),
-                      SizedBox(height: 12),
-                      Text(
+                      const SizedBox(height: 12),
+                      const Text(
                         'Plan your day perfectly with ease and speed. Get started by adding a new event now.',
                         style: TextStyle(
                           fontSize: 18,
@@ -127,18 +141,11 @@ class HomeScreen extends StatelessWidget {
                           height: 1.4,
                         ),
                       ),
-                      SizedBox(height: 30),
+                      const SizedBox(height: 30),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => add_event_lib.AddEventPage(),
-                            ),
-                          );
-                        },
+                        onPressed: _navigateToAddEventPage,
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                           backgroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -146,7 +153,7 @@ class HomeScreen extends StatelessWidget {
                           elevation: 4,
                           shadowColor: Colors.black26,
                         ),
-                        child: Text(
+                        child: const Text(
                           'Get Started',
                           style: TextStyle(
                             fontSize: 20,

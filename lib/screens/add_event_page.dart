@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/event.dart';
 
 class AddEventPage extends StatefulWidget {
-  const AddEventPage({Key? key}) : super(key: key);
+  const AddEventPage({Key? key, Event? event}) : super(key: key);
 
   @override
   _AddEventPageState createState() => _AddEventPageState();
@@ -75,6 +75,7 @@ class _AddEventPageState extends State<AddEventPage> {
   Widget build(BuildContext context) {
     final primaryColor = const Color.fromARGB(255, 42, 134, 191);
 
+    var _navigateToAddEvent;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Event'),
@@ -184,6 +185,10 @@ class _AddEventPageState extends State<AddEventPage> {
             ),
           ),
         ),
+      ),
+       floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddEvent,
+        child: Icon(Icons.add),
       ),
     );
   }
