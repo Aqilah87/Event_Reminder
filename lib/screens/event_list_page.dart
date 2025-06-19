@@ -12,9 +12,26 @@ class EventListPage extends StatefulWidget {
 }
 
 class _EventListPageState extends State<EventListPage> {
-  // Format date as dd/mm/yyyy
+  // Format date + time
   String _formatDate(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
+      '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+      // Get icon based on reminder type
+  IconData _getIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'birthday':
+        return Icons.cake;
+      case 'meeting':
+        return Icons.business_center;
+      case 'anniversary':
+        return Icons.favorite;
+      case 'reminder':
+        return Icons.notifications_active;
+      default:
+        return Icons.event_note_outlined;
+    }
+  }
 
   void _addEvent(Event newEvent) {
     setState(() {
@@ -112,8 +129,11 @@ class _EventListPageState extends State<EventListPage> {
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 12, horizontal: 20),
-                        leading: const Icon(Icons.event_note_outlined,
-                            color: Color(0xFF374151), size: 32),
+                        leading: Icon(
+                           _getIcon(event.reminderType),
+                           color: const Color(0xFF374151),
+                           size: 32,
+                           ),
                         title: Text(
                           event.title,
                           style: const TextStyle(

@@ -54,6 +54,7 @@ class _AddEventPageState extends State<AddEventPage> {
       final newEvent = Event(
         title: _titleController.text.trim(),
         date: _startDateTime!,
+        reminderType: _reminderType,
         // You can extend Event model to include end time, type, repeat, etc.
       );
 

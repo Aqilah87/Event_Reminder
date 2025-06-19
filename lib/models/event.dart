@@ -7,10 +7,12 @@ class Event {
 
   /// Date for the event (date portion only, time is ignored).
   final DateTime date;
+  String? reminderType;
 
   /// Creates an Event with the given [title] and [date].
   Event({
     required this.title,
     required this.date,
+    this.reminderType
   });
 }
