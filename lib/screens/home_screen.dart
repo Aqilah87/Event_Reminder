@@ -51,49 +51,46 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.search),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _navigateToAddEventPage,
-          ),
         ],
       ),
-
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
+              decoration:
+                  BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
               child: Text(
                 'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
-              title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Home',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.event),
-              title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Events',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => EventListPage(events: _events)),
+                  MaterialPageRoute(
+                      builder: (context) => EventListPage(events: _events)),
                 );
               },
             ),
           ],
         ),
       ),
-
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -145,7 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ElevatedButton(
                         onPressed: _navigateToAddEventPage,
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 16),
                           backgroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

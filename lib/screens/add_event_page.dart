@@ -17,8 +17,19 @@ class _AddEventPageState extends State<AddEventPage> {
   String? _reminderType;
   String? _repeatOption;
 
-  final List<String> reminderTypes = ['Meeting', 'Birthday', 'Reminder', 'Anniversary'];
-  final List<String> repeatOptions = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
+  final List<String> reminderTypes = [
+    'Meeting',
+    'Birthday',
+    'Reminder',
+    'Anniversary'
+  ];
+  final List<String> repeatOptions = [
+    'None',
+    'Daily',
+    'Weekly',
+    'Monthly',
+    'Yearly'
+  ];
 
   Future<DateTime?> _pickDateTime({required bool isStart}) async {
     final now = DateTime.now();
@@ -91,7 +102,9 @@ class _AddEventPageState extends State<AddEventPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title
-                const Text('Event Title', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Event Title',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleController,
@@ -99,15 +112,21 @@ class _AddEventPageState extends State<AddEventPage> {
                     hintText: 'Enter event title',
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
                   ),
-                  validator: (value) => value == null || value.isEmpty ? 'Please enter a title' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Please enter a title'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
                 // Start DateTime
-                const Text('Start Date & Time', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Start Date & Time',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -121,7 +140,9 @@ class _AddEventPageState extends State<AddEventPage> {
                 const SizedBox(height: 16),
 
                 // End DateTime
-                const Text('End Date & Time', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('End Date & Time',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -135,38 +156,48 @@ class _AddEventPageState extends State<AddEventPage> {
                 const SizedBox(height: 16),
 
                 // Reminder Type Dropdown
-                const Text('Reminder Type', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Reminder Type',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _reminderType,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  items: reminderTypes.map((type) =>
-                    DropdownMenuItem(value: type, child: Text(type))
-                  ).toList(),
+                  items: reminderTypes
+                      .map((type) =>
+                          DropdownMenuItem(value: type, child: Text(type)))
+                      .toList(),
                   onChanged: (value) => setState(() => _reminderType = value),
-                  validator: (value) => value == null ? 'Please select a reminder type' : null,
+                  validator: (value) =>
+                      value == null ? 'Please select a reminder type' : null,
                 ),
                 const SizedBox(height: 16),
 
                 // Repeat Dropdown
-                const Text('Repeat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Repeat',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _repeatOption,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  items: repeatOptions.map((option) =>
-                    DropdownMenuItem(value: option, child: Text(option))
-                  ).toList(),
+                  items: repeatOptions
+                      .map((option) =>
+                          DropdownMenuItem(value: option, child: Text(option)))
+                      .toList(),
                   onChanged: (value) => setState(() => _repeatOption = value),
-                  validator: (value) => value == null ? 'Please select repeat option' : null,
+                  validator: (value) =>
+                      value == null ? 'Please select repeat option' : null,
                 ),
                 const SizedBox(height: 32),
 
@@ -176,20 +207,19 @@ class _AddEventPageState extends State<AddEventPage> {
                     onPressed: _saveEvent,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Save Event', style: TextStyle(fontSize: 18)),
+                    child: const Text('Save Event',
+                        style: TextStyle(fontSize: 18)),
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
-       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddEvent,
-        child: Icon(Icons.add),
       ),
     );
   }
