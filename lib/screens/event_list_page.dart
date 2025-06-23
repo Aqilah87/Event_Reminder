@@ -1,11 +1,12 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/event.dart';
+import '../models/event_data.dart';
 import 'add_event_page.dart';
 
 class EventListPage extends StatefulWidget {
-  final List<Event> events;
-
-  EventListPage({Key? key, required this.events}) : super(key: key);
+  const EventListPage({Key? key}) : super(key: key);
 
   @override
   _EventListPageState createState() => _EventListPageState();
@@ -17,7 +18,7 @@ class _EventListPageState extends State<EventListPage> {
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
       '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
-      // Get icon based on reminder type
+  // Get icon based on reminder type
   IconData _getIcon(String? type) {
     switch (type?.toLowerCase()) {
       case 'birthday':
@@ -33,19 +34,8 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
-  void _addEvent(Event newEvent) {
-    setState(() {
-      widget.events.add(newEvent);
-    });
-  }
-
-  void _updateEvent(Event updatedEvent, int index) {
-    setState(() {
-      widget.events[index] = updatedEvent;
-    });
-  }
-
-  void _deleteEvent(int index) {
+  // Delete event dialog
+  void _deleteEvent(Event event, EventData eventData) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -59,9 +49,7 @@ class _EventListPageState extends State<EventListPage> {
           TextButton(
             child: Text('Delete', style: TextStyle(color: Colors.red[700])),
             onPressed: () {
-              setState(() {
-                widget.events.removeAt(index);
-              });
+              eventData.deleteEvent(event);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Event deleted')),
@@ -73,7 +61,8 @@ class _EventListPageState extends State<EventListPage> {
     );
   }
 
-  Future<void> _navigateToAddEvent({Event? eventToEdit, int? editIndex}) async {
+  // Add new event or edit existing
+  Future<void> _navigateToAddEvent(EventData eventData, {Event? eventToEdit}) async {
     final result = await Navigator.push<Event>(
       context,
       MaterialPageRoute(
@@ -82,24 +71,28 @@ class _EventListPageState extends State<EventListPage> {
     );
 
     if (result != null) {
-      if (editIndex != null) {
-        _updateEvent(result, editIndex);
+      if (eventToEdit != null) {
+        eventData.updateEvent(eventToEdit, result);
       } else {
-        _addEvent(result);
+        eventData.addEvent(result);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final eventData = Provider.of<EventData>(context);
+    final allEvents = eventData.getAllEvents();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'My Events',
           style: TextStyle(
-              color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 24),
+            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 2,
@@ -111,29 +104,29 @@ class _EventListPageState extends State<EventListPage> {
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: widget.events.isEmpty
+          child: allEvents.isEmpty
               ? const Text(
                   'No events yet.',
                   style: TextStyle(fontSize: 18, color: Color(0xFF6B7280)),
                 )
               : ListView.separated(
-                  itemCount: widget.events.length,
+                  itemCount: allEvents.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final event = widget.events[index];
+                    final event = allEvents[index];
                     return Card(
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       elevation: 2,
                       shadowColor: Colors.black12,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 20),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                         leading: Icon(
-                           _getIcon(event.reminderType),
-                           color: const Color(0xFF374151),
-                           size: 32,
-                           ),
+                          _getIcon(event.reminderType),
+                          color: const Color(0xFF374151),
+                          size: 32,
+                        ),
                         title: Text(
                           event.title,
                           style: const TextStyle(
@@ -150,20 +143,19 @@ class _EventListPageState extends State<EventListPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // EDIT button
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined,
-                                  color: Colors.blueAccent),
+                              icon: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
                               tooltip: 'Edit Event',
-                              onPressed: () =>
-                                  _navigateToAddEvent(eventToEdit: event, editIndex: index),
+                              onPressed: () => _navigateToAddEvent(eventData, eventToEdit: event),
                               splashRadius: 20,
                               hoverColor: Colors.blueAccent.withOpacity(0.1),
                             ),
+                            // DELETE button
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.redAccent),
+                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                               tooltip: 'Delete Event',
-                              onPressed: () => _deleteEvent(index),
+                              onPressed: () => _deleteEvent(event, eventData),
                               splashRadius: 20,
                               hoverColor: Colors.redAccent.withOpacity(0.1),
                             ),
@@ -176,7 +168,7 @@ class _EventListPageState extends State<EventListPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddEvent(),
+        onPressed: () => _navigateToAddEvent(eventData),
         backgroundColor: const Color(0xFF2A86BF),
         tooltip: 'Add Event',
         child: const Icon(Icons.add),

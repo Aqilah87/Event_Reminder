@@ -1,20 +1,19 @@
+
 import 'package:flutter/material.dart';
-import 'package:reminder_test/main.dart';
+import 'package:provider/provider.dart';
 import 'event_list_page.dart';
 import 'add_event_page.dart' as add_event_lib;
+import 'calendar_page.dart';
 import '../models/event.dart';
+import '../models/event_data.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  // Navigate to Add Event Page via EventData Provider
+  void _navigateToAddEventPage(BuildContext context) async {
+    final eventData = Provider.of<EventData>(context, listen: false);
 
-class _HomeScreenState extends State<HomeScreen> {
-  List<Event> _events = [];
-
-  void _navigateToAddEventPage() async {
     final newEvent = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -23,9 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (newEvent != null && newEvent is Event) {
-      setState(() {
-        _events.add(newEvent);
-      });
+      eventData.addEvent(newEvent);
     }
   }
 
@@ -33,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 42, 134, 191),
         title: const Text(
@@ -53,44 +51,56 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+
+      // Drawer Menu
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration:
-                  BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
+              decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
               child: Text(
                 'Menu',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700),
+                  color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
-              title: const Text('Home',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.event),
-              title: const Text('Events',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => EventListPage(events: _events)),
+                    builder: (context) => const EventListPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalendarPage(),
+                  ),
                 );
               },
             ),
           ],
         ),
       ),
+
+      // Body Content
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -112,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 15),
-                // Call to action on right
+                // Text and button on right
                 Flexible(
                   flex: 1,
                   child: Column(
@@ -140,10 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 30),
                       ElevatedButton(
-                        onPressed: _navigateToAddEventPage,
+                        onPressed: () => _navigateToAddEventPage(context),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                           backgroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
