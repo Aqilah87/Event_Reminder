@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/event_list_page.dart';
-import 'package:reminder_test/screens/add_event_page.dart';
+//import 'package:reminder_test/screens/add_event_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,7 +50,8 @@ class MyApp extends StatelessWidget {
       ),
       home: const HomeScreen(),
       routes: {
-        '/events': (context) => EventListPage(events: []), // Pass real event list here
+        '/events': (context) =>
+            EventListPage(events: []), // Pass real event list here
         '/add-event': (context) => const AddEventPage(),
       },
     );
