@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.reminder_test"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -42,13 +42,8 @@ android {
 
 flutter {
     source = "../.."
-<<<<<<< HEAD
-}
-=======
 }
 
 dependencies {
-    // ✅ add this line to support desugaring
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
->>>>>>> 48a0dc47a33a215e2f0ed8845c6e3bedbd5c6fe5
