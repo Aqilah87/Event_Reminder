@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
@@ -13,12 +12,10 @@ class EventListPage extends StatefulWidget {
 }
 
 class _EventListPageState extends State<EventListPage> {
-  // Format date + time
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
       '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
-  // Get icon based on reminder type
   IconData _getIcon(String? type) {
     switch (type?.toLowerCase()) {
       case 'birthday':
@@ -34,7 +31,6 @@ class _EventListPageState extends State<EventListPage> {
     }
   }
 
-  // Delete event dialog
   void _deleteEvent(Event event, EventData eventData) {
     showDialog(
       context: context,
@@ -61,7 +57,6 @@ class _EventListPageState extends State<EventListPage> {
     );
   }
 
-  // Add new event or edit existing
   Future<void> _navigateToAddEvent(EventData eventData, {Event? eventToEdit}) async {
     final result = await Navigator.push<Event>(
       context,
@@ -120,8 +115,8 @@ class _EventListPageState extends State<EventListPage> {
                       elevation: 2,
                       shadowColor: Colors.black12,
                       child: ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 20),
                         leading: Icon(
                           _getIcon(event.reminderType),
                           color: const Color(0xFF374151),
@@ -135,7 +130,7 @@ class _EventListPageState extends State<EventListPage> {
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 4.0),
                           child: Text(
-                            'Date: ${_formatDate(event.date)}',
+                            'Date: ${_formatDate(event.dateTime)}',
                             style: const TextStyle(
                                 color: Color(0xFF6B7280), fontSize: 14),
                           ),
@@ -143,17 +138,17 @@ class _EventListPageState extends State<EventListPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // EDIT button
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+                              icon: const Icon(Icons.edit_outlined,
+                                  color: Colors.blueAccent),
                               tooltip: 'Edit Event',
                               onPressed: () => _navigateToAddEvent(eventData, eventToEdit: event),
                               splashRadius: 20,
                               hoverColor: Colors.blueAccent.withOpacity(0.1),
                             ),
-                            // DELETE button
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.redAccent),
                               tooltip: 'Delete Event',
                               onPressed: () => _deleteEvent(event, eventData),
                               splashRadius: 20,

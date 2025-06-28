@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+
+import 'models/event.dart';
 import 'models/event_data.dart';
 import 'screens/home_screen.dart';
 import 'screens/event_list_page.dart';
 import 'screens/add_event_page.dart';
 import 'screens/calendar_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final appDocDir = await path_provider.getApplicationDocumentsDirectory();
+  await Hive.initFlutter(appDocDir.path);
+
+  Hive.registerAdapter(EventAdapter());
+  await Hive.openBox<Event>('events');
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => EventData(),
@@ -14,6 +26,7 @@ void main() {
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

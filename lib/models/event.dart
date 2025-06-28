@@ -1,18 +1,25 @@
-// TODO Implement this library.// lib/models/event.dart
+import 'package:hive/hive.dart';
 
-/// Model class representing a reminder event.
-class Event {
-  /// Title or description of the event.
+part 'event.g.dart';
+
+@HiveType(typeId: 0)
+class Event extends HiveObject {
+  @HiveField(0)
   final String title;
 
-  /// Date for the event (date portion only, time is ignored).
-  final DateTime date;
-  String? reminderType;
+  @HiveField(1)
+  final String description;
 
-  /// Creates an Event with the given [title] and [date].
-  Event({
+  @HiveField(2)
+  final DateTime dateTime;
+
+  @HiveField(3)
+  final String reminderType;
+
+Event({
     required this.title,
-    required this.date,
-    this.reminderType
+    required this.description,
+    required this.dateTime,
+    required this.reminderType, 
   });
 }

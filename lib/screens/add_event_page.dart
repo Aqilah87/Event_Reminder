@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
 import '../models/event.dart';
 
 class AddEventPage extends StatefulWidget {
-  const AddEventPage({Key? key, Event? event}) : super(key: key);
+  final Event? event;
+
+  const AddEventPage({Key? key, this.event}) : super(key: key);
 
   @override
   _AddEventPageState createState() => _AddEventPageState();
@@ -12,6 +13,7 @@ class AddEventPage extends StatefulWidget {
 class _AddEventPageState extends State<AddEventPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   DateTime? _startDateTime;
   DateTime? _endDateTime;
@@ -24,6 +26,7 @@ class _AddEventPageState extends State<AddEventPage> {
     'Reminder',
     'Anniversary'
   ];
+
   final List<String> repeatOptions = [
     'None',
     'Daily',
@@ -31,6 +34,18 @@ class _AddEventPageState extends State<AddEventPage> {
     'Monthly',
     'Yearly'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.event != null) {
+      _titleController.text = widget.event!.title;
+      _descriptionController.text = widget.event!.description;
+      _startDateTime = widget.event!.dateTime;
+      _endDateTime = widget.event!.dateTime.add(const Duration(hours: 1));
+      _reminderType = widget.event!.reminderType;
+    }
+  }
 
   Future<DateTime?> _pickDateTime({required bool isStart}) async {
     final now = DateTime.now();
@@ -65,9 +80,9 @@ class _AddEventPageState extends State<AddEventPage> {
 
       final newEvent = Event(
         title: _titleController.text.trim(),
-        date: _startDateTime!,
-        reminderType: _reminderType,
-        // You can extend Event model to include end time, type, repeat, etc.
+        description: _descriptionController.text.trim(),
+        dateTime: _startDateTime!,
+        reminderType: _reminderType ?? 'Reminder',
       );
 
       _showSnackBar('Event saved successfully!', isError: false);
@@ -86,12 +101,11 @@ class _AddEventPageState extends State<AddEventPage> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color.fromARGB(255, 42, 134, 191);
+    const primaryColor = Color.fromARGB(255, 42, 134, 191);
 
-    var _navigateToAddEvent;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Event'),
+        title: Text(widget.event == null ? 'Add Event' : 'Edit Event'),
         backgroundColor: primaryColor,
       ),
       body: Padding(
@@ -102,10 +116,8 @@ class _AddEventPageState extends State<AddEventPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 const Text('Event Title',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleController,
@@ -115,19 +127,34 @@ class _AddEventPageState extends State<AddEventPage> {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16, horizontal: 12),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                   ),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Please enter a title'
-                      : null,
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please enter a title' : null,
                 ),
                 const SizedBox(height: 16),
 
-                // Start DateTime
+                const Text('Description',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Enter description',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 const Text('Start Date & Time',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -140,10 +167,8 @@ class _AddEventPageState extends State<AddEventPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // End DateTime
                 const Text('End Date & Time',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 OutlinedButton(
                   onPressed: () async {
@@ -156,10 +181,8 @@ class _AddEventPageState extends State<AddEventPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Reminder Type Dropdown
                 const Text('Reminder Type',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _reminderType,
@@ -179,10 +202,8 @@ class _AddEventPageState extends State<AddEventPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Repeat Dropdown
                 const Text('Repeat',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _repeatOption,
@@ -202,14 +223,13 @@ class _AddEventPageState extends State<AddEventPage> {
                 ),
                 const SizedBox(height: 32),
 
-                // Save Button
                 Center(
                   child: ElevatedButton(
                     onPressed: _saveEvent,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 16),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
