@@ -4,11 +4,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'models/event.dart';
+import 'models/user.dart';
 import 'models/event_data.dart';
-import 'screens/home_screen.dart';
+import 'models/auth_data.dart';
+import 'screens/login_page.dart';
 import 'screens/event_list_page.dart';
 import 'screens/add_event_page.dart';
 import 'screens/calendar_page.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,16 +20,25 @@ void main() async {
   await Hive.initFlutter(appDocDir.path);
 
   Hive.registerAdapter(EventAdapter());
+  Hive.registerAdapter(UserAdapter());
+  
   await Hive.openBox<Event>('events');
+  await Hive.openBox<User>('users');
+  await Hive.openBox('settings');
+
+  final authData = AuthData();
+  await authData.loadLoggedInUser();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => EventData(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthData()),
+        ChangeNotifierProvider(create: (_) => EventData()),
+      ],
       child: const MyApp(),
     ),
   );
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -47,7 +59,13 @@ class MyApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.black87),
         ),
       ),
-      home: const HomeScreen(),
+      home: Consumer<AuthData>(
+        builder: (context, auth, _) {
+          return auth.currentUser == null
+              ? const LoginPage()
+              : const HomeScreen();
+        },
+      ),
       routes: {
         '/events': (context) => const EventListPage(),
         '/add-event': (context) => const AddEventPage(),
