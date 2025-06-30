@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'event_list_page.dart';
@@ -49,6 +48,12 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.search),
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+          ),
         ],
       ),
 
@@ -58,23 +63,28 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
+              decoration:
+                  BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
               child: Text(
                 'Menu',
                 style: TextStyle(
-                  color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700),
               ),
             ),
             ListTile(
               leading: const Icon(Icons.home),
-              title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Home',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
             ListTile(
               leading: const Icon(Icons.event),
-              title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Events',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -86,7 +96,8 @@ class HomeScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
+              title: const Text('Calendar',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
               onTap: () {
                 Navigator.push(
                   context,
@@ -152,7 +163,8 @@ class HomeScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () => _navigateToAddEventPage(context),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 16),
                           backgroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

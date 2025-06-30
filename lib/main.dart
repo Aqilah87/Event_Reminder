@@ -12,6 +12,8 @@ import 'screens/event_list_page.dart';
 import 'screens/add_event_page.dart';
 import 'screens/calendar_page.dart';
 import 'screens/home_screen.dart';
+import 'screens/settings_page.dart';
+import 'theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +23,7 @@ void main() async {
 
   Hive.registerAdapter(EventAdapter());
   Hive.registerAdapter(UserAdapter());
-  
+
   await Hive.openBox<Event>('events');
   await Hive.openBox<User>('users');
   await Hive.openBox('settings');
@@ -34,6 +36,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthData()),
         ChangeNotifierProvider(create: (_) => EventData()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -70,6 +73,7 @@ class MyApp extends StatelessWidget {
         '/events': (context) => const EventListPage(),
         '/add-event': (context) => const AddEventPage(),
         '/calendar': (context) => const CalendarPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }
