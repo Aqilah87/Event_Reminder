@@ -53,52 +53,102 @@ class HomeScreen extends StatelessWidget {
       ),
 
       // Drawer Menu
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Color.fromARGB(255, 42, 134, 191)),
+            child: Text(
+              'Menu',
+              style: TextStyle(
+            color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.event),
+            title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
+            onTap: () {
+              Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const EventListPage(),
+            ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
+            onTap: () {
+              Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CalendarPage(),
+            ),
+              );
+            },
+          ),
+          const Divider(),
+
+          // 🔽Dropdown Categories
+          ExpansionTile(
+            leading: const Icon(Icons.category),
+            title: const Text('Categories', style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            children: [
+              ListTile(
+            leading: const Icon(Icons.business, color: Colors.blue),
+            title: const Text('Meeting'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate or filter Meeting category
+            },
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.event),
-              title: const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EventListPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CalendarPage(),
-                  ),
-                );
-              },
-            ),
-          ],
+              ListTile(
+            leading: const Icon(Icons.alarm, color: Colors.green),
+            title: const Text('Reminder'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate or filter Reminder category
+            },
+              ),
+              ListTile(
+            leading: const Icon(Icons.cake, color: Colors.orange),
+            title: const Text('Birthday'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate or filter Birthday category
+            },
+              ),
+              ListTile(
+            leading: const Icon(Icons.favorite, color: Colors.red),
+            title: const Text('Anniversary'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate or filter Anniversary category
+            },
+              ),
+              ListTile(
+            leading: const Icon(Icons.refresh),
+            title: const Text('All Events'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Reset category filter
+            },
+              ),
+            ],
+          ),
+            ],
+          ),
         ),
-      ),
 
       // Body Content
       body: Center(
