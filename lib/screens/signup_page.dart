@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/auth_data.dart';
-import 'event_list_page.dart';
+import 'home_screen.dart'; // ✅ Make sure this import points to your real homepage
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -18,17 +18,20 @@ class _SignUpPageState extends State<SignUpPage> {
   void _signUp() {
     if (_formKey.currentState!.validate()) {
       final auth = Provider.of<AuthData>(context, listen: false);
-      final success = auth.signUp(_username.text.trim(), _password.text.trim());
+      final success = auth.signUp(
+        _username.text.trim(),
+        _password.text.trim(),
+      );
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account created!')),
         );
 
-        // ✅ Navigate to EventListPage directly after signup
+        // ✅ Navigate to HomeScreen instead of EventListPage
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const EventListPage()),
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
           (route) => false,
         );
       } else {
