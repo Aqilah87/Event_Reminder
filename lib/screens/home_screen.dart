@@ -48,12 +48,6 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.search),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
         ],
       ),
 
@@ -106,6 +100,58 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               },
+            ),
+            const Divider(),
+
+            // 🔽Dropdown Categories
+            ExpansionTile(
+              leading: const Icon(Icons.category),
+              title: const Text(
+                'Categories',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.business, color: Colors.blue),
+                  title: const Text('Meeting'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate or filter Meeting category
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.alarm, color: Colors.green),
+                  title: const Text('Reminder'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate or filter Reminder category
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cake, color: Colors.orange),
+                  title: const Text('Birthday'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate or filter Birthday category
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.favorite, color: Colors.red),
+                  title: const Text('Anniversary'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate or filter Anniversary category
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.refresh),
+                  title: const Text('All Events'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Reset category filter
+                  },
+                ),
+              ],
             ),
           ],
         ),
