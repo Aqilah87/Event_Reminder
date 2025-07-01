@@ -43,7 +43,7 @@ class _EventListPageState extends State<EventListPage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
           TextButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red[700])),
+            child: Text('Delete', style: TextStyle(color: Colors.red.shade700)),
             onPressed: () {
               eventData.deleteEvent(event);
               Navigator.of(context).pop();
@@ -57,7 +57,8 @@ class _EventListPageState extends State<EventListPage> {
     );
   }
 
-  Future<void> _navigateToAddEvent(EventData eventData, {Event? eventToEdit}) async {
+  Future<void> _navigateToAddEvent(EventData eventData,
+      {Event? eventToEdit}) async {
     final result = await Navigator.push<Event>(
       context,
       MaterialPageRoute(
@@ -78,31 +79,36 @@ class _EventListPageState extends State<EventListPage> {
   Widget build(BuildContext context) {
     final eventData = Provider.of<EventData>(context);
     final allEvents = eventData.getAllEvents();
+    final theme = Theme.of(context);
+    final purple = Colors.purple.shade700;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'My Events',
           style: TextStyle(
-            color: Colors.black87,
+            color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 24,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: purple,
         elevation: 2,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: allEvents.isEmpty
-              ? const Text(
+              ? Text(
                   'No events yet.',
-                  style: TextStyle(fontSize: 18, color: Color(0xFF6B7280)),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontSize: 18,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  ),
                 )
               : ListView.separated(
                   itemCount: allEvents.length,
@@ -111,7 +117,8 @@ class _EventListPageState extends State<EventListPage> {
                     final event = allEvents[index];
                     return Card(
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 2,
                       shadowColor: Colors.black12,
                       child: ListTile(
@@ -119,32 +126,35 @@ class _EventListPageState extends State<EventListPage> {
                             vertical: 12, horizontal: 20),
                         leading: Icon(
                           _getIcon(event.reminderType),
-                          color: const Color(0xFF374151),
+                          color: purple,
                           size: 32,
                         ),
                         title: Text(
                           event.title,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 18),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         subtitle: Padding(
                           padding: const EdgeInsets.only(top: 4.0),
                           child: Text(
                             'Date: ${_formatDate(event.dateTime)}',
-                            style: const TextStyle(
-                                color: Color(0xFF6B7280), fontSize: 14),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color
+                                  ?.withOpacity(0.6),
+                            ),
                           ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined,
-                                  color: Colors.blueAccent),
+                              icon: Icon(Icons.edit_outlined, color: purple),
                               tooltip: 'Edit Event',
-                              onPressed: () => _navigateToAddEvent(eventData, eventToEdit: event),
+                              onPressed: () => _navigateToAddEvent(eventData,
+                                  eventToEdit: event),
                               splashRadius: 20,
-                              hoverColor: Colors.blueAccent.withOpacity(0.1),
+                              hoverColor: purple.withOpacity(0.1),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline,
@@ -164,7 +174,7 @@ class _EventListPageState extends State<EventListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddEvent(eventData),
-        backgroundColor: const Color(0xFF2A86BF),
+        backgroundColor: purple,
         tooltip: 'Add Event',
         child: const Icon(Icons.add),
       ),

@@ -27,82 +27,122 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final eventData = Provider.of<EventData>(context);
+    final purple = Colors.purple.shade700;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: purple,
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
         title: const Text(
           'Calendar',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 42, 134, 191),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TableCalendar<Event>(
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2100, 12, 31),
-              focusedDay: _focusedDay,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              eventLoader: (day) => _getEventsForDay(day, eventData),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              calendarFormat: CalendarFormat.month,
-              availableCalendarFormats: const {
-                CalendarFormat.month: 'Month',
-              },
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
-                leftChevronIcon: Icon(Icons.chevron_left, color: Colors.black87),
-                rightChevronIcon: Icon(Icons.chevron_right, color: Colors.black87),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              calendarStyle: const CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Colors.blueAccent,
-                  shape: BoxShape.circle,
+              child: TableCalendar<Event>(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2100, 12, 31),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                eventLoader: (day) => _getEventsForDay(day, eventData),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                },
+                calendarFormat: CalendarFormat.month,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: 'Month',
+                },
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: theme.textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: purple,
+                  ),
+                  leftChevronIcon: Icon(Icons.chevron_left, color: purple),
+                  rightChevronIcon: Icon(Icons.chevron_right, color: purple),
                 ),
-                selectedDecoration: BoxDecoration(
-                  color: Colors.black87,
-                  shape: BoxShape.circle,
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: purple.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: purple,
+                    shape: BoxShape.circle,
+                  ),
+                  weekendTextStyle: TextStyle(color: Colors.red.shade400),
+                  defaultTextStyle: theme.textTheme.bodyMedium!,
                 ),
-                weekendTextStyle: TextStyle(color: Colors.redAccent),
               ),
             ),
             const SizedBox(height: 20),
             Expanded(
               child: _getEventsForDay(_selectedDay!, eventData).isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'No events for this day.',
-                        style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: 16,
+                          color: theme.textTheme.bodyMedium?.color
+                              ?.withOpacity(0.6),
+                        ),
                       ),
                     )
                   : ListView.builder(
-                      itemCount: _getEventsForDay(_selectedDay!, eventData).length,
+                      itemCount:
+                          _getEventsForDay(_selectedDay!, eventData).length,
                       itemBuilder: (context, index) {
-                        final event = _getEventsForDay(_selectedDay!, eventData)[index];
-                        return ListTile(
-                          leading: const Icon(Icons.event_note, color: Colors.black87),
-                          title: Text(
-                            event.title,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                        final event =
+                            _getEventsForDay(_selectedDay!, eventData)[index];
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.shadowColor.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          subtitle: Text(event.reminderType ?? 'General'),
+                          child: ListTile(
+                            leading: Icon(Icons.event_note, color: purple),
+                            title: Text(
+                              event.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              event.reminderType ?? 'General',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
                         );
                       },
                     ),
