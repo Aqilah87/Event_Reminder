@@ -5,20 +5,90 @@ import 'add_event_page.dart' as add_event_lib;
 import 'calendar_page.dart';
 import '../models/event.dart';
 import '../models/event_data.dart';
+import 'package:flutter/material.dart';
+
+// Add this delegate if not already defined elsewhere
+class EventSearchDelegate extends SearchDelegate<Event?> {
+  final List<Event> events;
+
+  EventSearchDelegate(this.events);
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results = events
+        .where(
+            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final event = results[index];
+        return ListTile(
+          title: Text(event.title),
+          subtitle: Text(event.description ?? ''),
+          onTap: () {
+            close(context, event);
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestions = events
+        .where(
+            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        final event = suggestions[index];
+        return ListTile(
+          title: Text(event.title),
+          onTap: () {
+            query = event.title;
+            showResults(context);
+          },
+        );
+      },
+    );
+  }
+}
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   void _navigateToAddEventPage(BuildContext context) async {
     final eventData = Provider.of<EventData>(context, listen: false);
-
     final newEvent = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => add_event_lib.AddEventPage(),
-      ),
+      MaterialPageRoute(builder: (_) => add_event_lib.AddEventPage()),
     );
-
     if (newEvent != null && newEvent is Event) {
       eventData.addEvent(newEvent);
     }
@@ -31,28 +101,31 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.purple.shade700, // SAME color for all modes
+        backgroundColor: Colors.purple.shade700,
         title: const Text(
           'Home Screen',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
+            icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              final eventData = Provider.of<EventData>(context, listen: false);
+              showSearch(
+                context: context,
+                delegate: EventSearchDelegate(eventData.events),
+              );
+            },
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               Navigator.pushNamed(context, '/settings');
             },
@@ -64,9 +137,7 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.purple.shade700, // SAME color for all modes
-              ),
+              decoration: BoxDecoration(color: Colors.purple.shade700),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -74,165 +145,150 @@ class HomeScreen extends StatelessWidget {
                   const Text(
                     'Menu',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Organize your day efficiently',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8)),
                   ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.event),
-              title: const Text('Events',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const EventListPage())),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('Calendar',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const CalendarPage())),
-            ),
+            _buildDrawerItem(context, Icons.home, 'Home', () {
+              Navigator.pop(context);
+            }),
+            _buildDrawerItem(context, Icons.event, 'Events', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EventListPage()),
+              );
+            }),
+            _buildDrawerItem(context, Icons.calendar_today, 'Calendar', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CalendarPage()),
+              );
+            }),
             const Divider(),
             ExpansionTile(
               leading: const Icon(Icons.category),
               title: const Text('Categories',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               children: [
-                ListTile(
-                  leading: const Icon(Icons.business, color: Colors.blue),
-                  title: const Text('Meeting'),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.alarm, color: Colors.green),
-                  title: const Text('Reminder'),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.cake, color: Colors.orange),
-                  title: const Text('Birthday'),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.favorite, color: Colors.red),
-                  title: const Text('Anniversary'),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.refresh),
-                  title: const Text('All Events'),
-                  onTap: () => Navigator.pop(context),
-                ),
+                _buildDrawerItem(context, Icons.business, 'Meeting', () {
+                  Navigator.pop(context);
+                }, iconColor: Colors.blue),
+                _buildDrawerItem(context, Icons.alarm, 'Reminder', () {
+                  Navigator.pop(context);
+                }, iconColor: Colors.green),
+                _buildDrawerItem(context, Icons.cake, 'Birthday', () {
+                  Navigator.pop(context);
+                }, iconColor: Colors.orange),
+                _buildDrawerItem(context, Icons.favorite, 'Anniversary', () {
+                  Navigator.pop(context);
+                }, iconColor: Colors.red),
+                _buildDrawerItem(context, Icons.refresh, 'All Events', () {
+                  Navigator.pop(context);
+                }),
               ],
             ),
           ],
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 160,
-                      child: Image.asset(
-                        'assets/logo_reminder-removebg-preview.png',
-                        fit: BoxFit.contain,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 160,
+                    child: Image.asset(
+                      'assets/logo_reminder-removebg-preview.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Welcome to Event Reminder',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Stay on top of your schedule. Easily plan, track, and get notified about your events all in one place.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 16,
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton.icon(
+                    onPressed: () => _navigateToAddEventPage(context),
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text(
+                      'Create New Event',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      backgroundColor: Colors.purple.shade700,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Welcome to Event Reminder',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  Divider(
+                    thickness: 1,
+                    color: theme.dividerColor.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Your day made easy with Event Reminder',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Stay on top of your schedule. Easily plan, track, and get notified about your events all in one place.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 16,
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withOpacity(0.75),
-                      ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Access your events, calendar, and reminders through the side menu.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
                     ),
-                    const SizedBox(height: 30),
-                    ElevatedButton.icon(
-                      onPressed: () => _navigateToAddEventPage(context),
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text(
-                        'Create New Event',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        backgroundColor: Colors.purple.shade700, // Same color
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Divider(
-                      thickness: 1,
-                      color: theme.dividerColor.withOpacity(0.3),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Your day made easy with Event Reminder',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color:
-                            theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Access your events, calendar, and reminders through the side menu.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      BuildContext context, IconData icon, String title, VoidCallback onTap,
+      {Color? iconColor}) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor ?? Colors.black),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      onTap: onTap,
     );
   }
 }

@@ -9,13 +9,17 @@ class EventData extends ChangeNotifier {
     _loadEvents();
   }
 
+  List<Event> get events => _events;
+
   List<Event> getAllEvents() => _events;
 
   List<Event> getEventsForDay(DateTime day) {
-    return _events.where((event) =>
-        event.dateTime.year == day.year &&
-        event.dateTime.month == day.month &&
-        event.dateTime.day == day.day).toList();
+    return _events
+        .where((event) =>
+            event.dateTime.year == day.year &&
+            event.dateTime.month == day.month &&
+            event.dateTime.day == day.day)
+        .toList();
   }
 
   Future<void> _loadEvents() async {
@@ -36,7 +40,8 @@ class EventData extends ChangeNotifier {
     final box = Hive.box<Event>('events');
 
     // Find key of the event to delete it from the box
-    final key = box.keys.firstWhere((k) => box.get(k) == event, orElse: () => null);
+    final key =
+        box.keys.firstWhere((k) => box.get(k) == event, orElse: () => null);
     if (key != null) {
       await box.delete(key);
       _events.remove(event);
@@ -46,7 +51,8 @@ class EventData extends ChangeNotifier {
 
   Future<void> updateEvent(Event oldEvent, Event newEvent) async {
     final box = Hive.box<Event>('events');
-    final key = box.keys.firstWhere((k) => box.get(k) == oldEvent, orElse: () => null);
+    final key =
+        box.keys.firstWhere((k) => box.get(k) == oldEvent, orElse: () => null);
     if (key != null) {
       await box.put(key, newEvent);
       final index = _events.indexOf(oldEvent);
