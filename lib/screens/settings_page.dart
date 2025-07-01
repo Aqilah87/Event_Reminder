@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reminder_test/theme_provider.dart';
+import '../models/auth_data.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,51 +16,103 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final auth = Provider.of<AuthData>(context);
+    final theme = Theme.of(context);
+    final currentUser = auth.currentUser;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
         centerTitle: true,
       ),
-      body: ListView(
-        children: [
-          const SizedBox(height: 20),
-          SwitchListTile(
-            title: const Text('Dark Mode'),
-            value: themeProvider.isDarkMode,
-            onChanged: (bool value) {
-              themeProvider.toggleTheme();
-            },
-            secondary: const Icon(Icons.dark_mode),
-          ),
-          const Divider(),
-          SwitchListTile(
-            title: const Text('Enable Notifications'),
-            value: _notificationsEnabled,
-            onChanged: (bool value) {
-              setState(() {
-                _notificationsEnabled = value;
-                // TODO: Add logic to enable/disable notifications
-              });
-            },
-            secondary: const Icon(Icons.notifications),
-          ),
-          const Divider(),
-          ListTile(
-            title: const Text('Account Settings'),
-            leading: const Icon(Icons.account_circle),
-            onTap: () {
-              // TODO: Navigate to account settings or profile page
-            },
-          ),
-          ListTile(
-            title: const Text('Log Out'),
-            leading: const Icon(Icons.logout),
-            onTap: () {
-              _showLogoutDialog(context);
-            },
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            _buildSectionHeader("Preferences"),
+            Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('Dark Mode'),
+                    value: themeProvider.isDarkMode,
+                    onChanged: (bool value) {
+                      themeProvider.toggleTheme();
+                    },
+                    secondary:
+                        Icon(Icons.dark_mode, color: theme.iconTheme.color),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    title: const Text('Enable Notifications'),
+                    value: _notificationsEnabled,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _notificationsEnabled = value;
+                      });
+                    },
+                    secondary:
+                        Icon(Icons.notifications, color: theme.iconTheme.color),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeader("User Info"),
+            Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(currentUser?.username ?? 'Guest User'),
+                trailing: const Icon(Icons.info_outline),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeader("About"),
+            Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                title: const Text('About This App'),
+                subtitle:
+                    const Text('Event Reminder v1.0\nCreated by Team 3A1I'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionHeader("Account"),
+            Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Log Out'),
+                onTap: () {
+                  _showLogoutDialog(context);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, left: 4.0, bottom: 4.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -77,10 +130,16 @@ class _SettingsPageState extends State<SettingsPage> {
               child: const Text("Cancel"),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
               onPressed: () {
-                // TODO: Handle logout and navigate to login page
+                Navigator.pop(ctx); // Close dialog
                 Navigator.pushNamedAndRemoveUntil(
                     context, '/login', (route) => false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("You have been logged out.")),
+                );
               },
               child: const Text("Log Out"),
             ),

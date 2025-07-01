@@ -48,18 +48,42 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Event Reminder',
       debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
+        brightness: Brightness.light,
         scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.black87,
+        primaryColor: Colors.deepPurple,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 2,
           centerTitle: true,
           iconTheme: IconThemeData(color: Colors.black87),
+        ),
+        cardColor: Colors.white,
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.black87),
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Color(0xFF121212),
+        primaryColor: Colors.tealAccent,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1F1F1F),
+          foregroundColor: Colors.white,
+          elevation: 2,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        cardColor: Color(0xFF1E1E1E),
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: Colors.white70),
         ),
       ),
       home: Consumer<AuthData>(
@@ -74,6 +98,7 @@ class MyApp extends StatelessWidget {
         '/add-event': (context) => const AddEventPage(),
         '/calendar': (context) => const CalendarPage(),
         '/settings': (context) => const SettingsPage(),
+        '/login': (context) => const LoginPage(),
       },
     );
   }

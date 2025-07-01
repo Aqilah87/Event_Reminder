@@ -24,7 +24,8 @@ class _AddEventPageState extends State<AddEventPage> {
     'Meeting',
     'Birthday',
     'Reminder',
-    'Anniversary'
+    'Anniversary',
+    'Other', // ✅ Added
   ];
 
   final List<String> repeatOptions = [
@@ -32,7 +33,7 @@ class _AddEventPageState extends State<AddEventPage> {
     'Daily',
     'Weekly',
     'Monthly',
-    'Yearly'
+    'Yearly',
   ];
 
   @override
@@ -105,136 +106,105 @@ class _AddEventPageState extends State<AddEventPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.event == null ? 'Add Event' : 'Edit Event'),
-        backgroundColor: primaryColor,
+        title: Text(
+          widget.event == null ? 'Add Event' : 'Edit Event',
+          style: const TextStyle(
+            color: Colors.white, // Change title text color here
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.purple.shade700,
+        iconTheme: const IconThemeData(
+            color: Colors.white), // Optional: makes back icon white
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Event Title',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextFormField(
+                _buildLabel('📝 Event Title'),
+                _buildTextField(
                   controller: _titleController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter event title',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                  ),
-                  validator: (value) =>
-                      value == null || value.isEmpty ? 'Please enter a title' : null,
+                  hintText: 'e.g. Doctor Appointment',
+                  validatorMsg: 'Please enter a title',
                 ),
                 const SizedBox(height: 16),
-
-                const Text('Description',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextFormField(
+                _buildLabel('🗒️ Description (Optional)'),
+                _buildTextField(
                   controller: _descriptionController,
+                  hintText: 'Write additional notes or location...',
                   maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'Enter description',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                  ),
                 ),
                 const SizedBox(height: 16),
-
-                const Text('Start Date & Time',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () async {
+                _buildLabel('🕒 Start Date & Time'),
+                _buildDateButton(
+                  dateTime: _startDateTime,
+                  label: 'Pick Start Date & Time',
+                  onTap: () async {
                     final picked = await _pickDateTime(isStart: true);
                     if (picked != null) setState(() => _startDateTime = picked);
                   },
-                  child: Text(_startDateTime == null
-                      ? 'Pick Start Date & Time'
-                      : _startDateTime.toString()),
                 ),
                 const SizedBox(height: 16),
-
-                const Text('End Date & Time',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () async {
+                _buildLabel('⏰ End Date & Time'),
+                _buildDateButton(
+                  dateTime: _endDateTime,
+                  label: 'Pick End Date & Time',
+                  onTap: () async {
                     final picked = await _pickDateTime(isStart: false);
                     if (picked != null) setState(() => _endDateTime = picked);
                   },
-                  child: Text(_endDateTime == null
-                      ? 'Pick End Date & Time'
-                      : _endDateTime.toString()),
                 ),
                 const SizedBox(height: 16),
-
-                const Text('Reminder Type',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
+                _buildLabel('📌 Reminder Type'),
+                _buildDropdown(
                   value: _reminderType,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  items: reminderTypes
-                      .map((type) =>
-                          DropdownMenuItem(value: type, child: Text(type)))
-                      .toList(),
+                  hint: 'Select reminder category',
+                  options: reminderTypes,
                   onChanged: (value) => setState(() => _reminderType = value),
-                  validator: (value) =>
-                      value == null ? 'Please select a reminder type' : null,
+                  validator: 'Please select a reminder type',
                 ),
                 const SizedBox(height: 16),
-
-                const Text('Repeat',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
+                _buildLabel('🔁 Repeat'),
+                _buildDropdown(
                   value: _repeatOption,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  items: repeatOptions
-                      .map((option) =>
-                          DropdownMenuItem(value: option, child: Text(option)))
-                      .toList(),
+                  hint: 'Set repeat schedule (if any)',
+                  options: repeatOptions,
                   onChanged: (value) => setState(() => _repeatOption = value),
-                  validator: (value) =>
-                      value == null ? 'Please select repeat option' : null,
+                  validator: 'Please select repeat option',
                 ),
                 const SizedBox(height: 32),
-
                 Center(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: _saveEvent,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                    icon: const Icon(
+                      Icons.save,
+                      color: Colors.white, // ✅ Icon color
                     ),
-                    child: const Text('Save Event',
-                        style: TextStyle(fontSize: 18)),
+                    label: const Text(
+                      'Save Event',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // ✅ Text color
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Colors.purple.shade700, // ✅ Soft blue background
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 36,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      shadowColor: Colors.blueAccent,
+                    ),
                   ),
                 ),
               ],
@@ -242,6 +212,77 @@ class _AddEventPageState extends State<AddEventPage> {
           ),
         ),
       ),
+    );
+  }
+
+  // Helper Widgets Below
+  Widget _buildLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        ),
+      );
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    String? validatorMsg,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        hintText: hintText,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 12,
+        ),
+      ),
+      validator: validatorMsg == null
+          ? null
+          : (value) => value == null || value.isEmpty ? validatorMsg : null,
+    );
+  }
+
+  Widget _buildDateButton({
+    required DateTime? dateTime,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton(
+      onPressed: onTap,
+      child: Text(
+        dateTime == null ? label : dateTime.toString(),
+        style: const TextStyle(fontSize: 16),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String hint,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+    required String validator,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      hint: Text(hint),
+      items: options
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
+      onChanged: onChanged,
+      validator: (val) => val == null ? validator : null,
     );
   }
 }
