@@ -5,9 +5,7 @@ import 'add_event_page.dart' as add_event_lib;
 import 'calendar_page.dart';
 import '../models/event.dart';
 import '../models/event_data.dart';
-import 'package:flutter/material.dart';
 
-// Add this delegate if not already defined elsewhere
 class EventSearchDelegate extends SearchDelegate<Event?> {
   final List<Event> events;
 
@@ -18,9 +16,7 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
     return [
       IconButton(
         icon: const Icon(Icons.clear),
-        onPressed: () {
-          query = '';
-        },
+        onPressed: () => query = '',
       ),
     ];
   }
@@ -29,17 +25,14 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
   Widget? buildLeading(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: () {
-        close(context, null);
-      },
+      onPressed: () => close(context, null),
     );
   }
 
   @override
   Widget buildResults(BuildContext context) {
     final results = events
-        .where(
-            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .where((event) => event.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
 
     return ListView.builder(
@@ -49,9 +42,7 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
         return ListTile(
           title: Text(event.title),
           subtitle: Text(event.description ?? ''),
-          onTap: () {
-            close(context, event);
-          },
+          onTap: () => close(context, event),
         );
       },
     );
@@ -60,8 +51,7 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = events
-        .where(
-            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .where((event) => event.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
 
     return ListView.builder(
@@ -203,6 +193,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Welcome section
             Center(
               child: Column(
                 children: [
@@ -227,8 +218,7 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
-                      color:
-                          theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
+                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -250,31 +240,94 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  Divider(
-                    thickness: 1,
-                    color: theme.dividerColor.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Your day made easy with Event Reminder',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color:
-                          theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Access your events, calendar, and reminders through the side menu.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 30),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'All Events',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple.shade700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Event list
+            Consumer<EventData>(
+              builder: (context, eventData, _) {
+                final events = List<Event>.from(eventData.events)
+                  ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+                if (events.isEmpty) {
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Text(
+                          'No events found. Add one to get started!',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                IconData getIcon(String? type) {
+                  switch (type?.toLowerCase()) {
+                    case 'birthday':
+                      return Icons.cake;
+                    case 'meeting':
+                      return Icons.business_center;
+                    case 'anniversary':
+                      return Icons.favorite;
+                    case 'reminder':
+                      return Icons.notifications_active;
+                    default:
+                      return Icons.event_note;
+                  }
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    final event = events[index];
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: Icon(getIcon(event.reminderType), color: Colors.purple.shade700),
+                        title: Text(event.title),
+                        subtitle: Text(
+                          '${event.dateTime.day.toString().padLeft(2, '0')}/${event.dateTime.month.toString().padLeft(2, '0')}/${event.dateTime.year}',
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => add_event_lib.AddEventPage(event: event),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
