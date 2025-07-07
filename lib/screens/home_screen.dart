@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io'; // Import dart:io for File
 import 'event_list_page.dart';
 import 'add_event_page.dart' as add_event_lib;
 import 'calendar_page.dart';
@@ -32,7 +33,8 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
   @override
   Widget buildResults(BuildContext context) {
     final results = events
-        .where((event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .where(
+            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
 
     return ListView.builder(
@@ -51,7 +53,8 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = events
-        .where((event) => event.title.toLowerCase().contains(query.toLowerCase()))
+        .where(
+            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
         .toList();
 
     return ListView.builder(
@@ -73,14 +76,92 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  void _navigateToAddEventPage(BuildContext context) async {
-    final eventData = Provider.of<EventData>(context, listen: false);
-    final newEvent = await Navigator.push(
+  // Method to navigate to AddEventPage for adding or editing events
+  void _navigateToAddEvent(BuildContext context, EventData eventData,
+      {Event? eventToEdit}) async {
+    print('HomeScreen: --- Starting _navigateToAddEvent ---');
+    print(
+        'HomeScreen: Passed event to AddEventPage for edit: "${eventToEdit?.title}", Its Key: ${eventToEdit?.key}');
+
+    final result = await Navigator.push<Map<String, dynamic>?>(
       context,
-      MaterialPageRoute(builder: (_) => add_event_lib.AddEventPage()),
+      MaterialPageRoute(
+          builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
     );
-    if (newEvent != null && newEvent is Event) {
-      eventData.addEvent(newEvent);
+
+    if (result != null) {
+      final newEvent = result['event'] as Event;
+      final oldEventKey = result['key'] as int?;
+      print(
+          'HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
+
+      if (oldEventKey != null) {
+        // It's an edit operation, use the key to update
+        print(
+            'HomeScreen: Identified as UPDATE operation. Calling eventData.updateEvent with oldKey: $oldEventKey');
+        await eventData.updateEvent(oldEventKey, newEvent);
+      } else {
+        // It's a new event
+        print(
+            'HomeScreen: Identified as ADD operation. Calling eventData.addEvent for new event: "${newEvent.title}".');
+        await eventData.addEvent(newEvent);
+      }
+    } else {
+      print(
+          'HomeScreen: Returned from AddEventPage with null result (likely cancelled or pop without data).');
+    }
+    print('HomeScreen: --- Finished _navigateToAddEvent ---');
+  }
+
+  // Method to handle event deletion
+  void _deleteEvent(BuildContext context, Event event, EventData eventData) {
+    print(
+        'HomeScreen: Initiating delete for event: "${event.title}", Key: ${event.key}');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: const Text('Are you sure you want to delete this event?'),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () {
+              print('HomeScreen: Delete cancelled.');
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: Text('Delete', style: TextStyle(color: Colors.red.shade700)),
+            onPressed: () {
+              print(
+                  'HomeScreen: Confirmed delete for event: "${event.title}", Key: ${event.key}');
+              eventData.deleteEvent(event);
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Event deleted')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper function to get icon based on reminder type
+  IconData _getIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'birthday':
+        return Icons.cake;
+      case 'meeting':
+        return Icons.business_center;
+      case 'anniversary':
+        return Icons.favorite;
+      case 'reminder':
+        return Icons.notifications_active;
+      case 'other':
+        return Icons.event_note;
+      default:
+        return Icons.event_note_outlined;
     }
   }
 
@@ -170,18 +251,63 @@ class HomeScreen extends StatelessWidget {
               children: [
                 _buildDrawerItem(context, Icons.business, 'Meeting', () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'Meeting'),
+                    ),
+                  );
                 }, iconColor: Colors.blue),
                 _buildDrawerItem(context, Icons.alarm, 'Reminder', () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'Reminder'),
+                    ),
+                  );
                 }, iconColor: Colors.green),
                 _buildDrawerItem(context, Icons.cake, 'Birthday', () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'Birthday'),
+                    ),
+                  );
                 }, iconColor: Colors.orange),
                 _buildDrawerItem(context, Icons.favorite, 'Anniversary', () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'Anniversary'),
+                    ),
+                  );
                 }, iconColor: Colors.red),
+                _buildDrawerItem(context, Icons.event_note, 'Other', () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'Other'),
+                    ),
+                  );
+                }, iconColor: Colors.grey),
                 _buildDrawerItem(context, Icons.refresh, 'All Events', () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const EventListPage(categoryFilter: 'All Events'),
+                    ),
+                  );
                 }),
               ],
             ),
@@ -218,12 +344,14 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
-                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
+                      color:
+                          theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
                     ),
                   ),
                   const SizedBox(height: 30),
                   ElevatedButton.icon(
-                    onPressed: () => _navigateToAddEventPage(context),
+                    onPressed: () => _navigateToAddEvent(context,
+                        Provider.of<EventData>(context, listen: false)),
                     icon: const Icon(Icons.add_circle_outline),
                     label: const Text(
                       'Create New Event',
@@ -273,7 +401,8 @@ class HomeScreen extends StatelessWidget {
                         child: Text(
                           'No events found. Add one to get started!',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withOpacity(0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -282,27 +411,14 @@ class HomeScreen extends StatelessWidget {
                   );
                 }
 
-                IconData getIcon(String? type) {
-                  switch (type?.toLowerCase()) {
-                    case 'birthday':
-                      return Icons.cake;
-                    case 'meeting':
-                      return Icons.business_center;
-                    case 'anniversary':
-                      return Icons.favorite;
-                    case 'reminder':
-                      return Icons.notifications_active;
-                    default:
-                      return Icons.event_note;
-                  }
-                }
-
                 return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: events.length,
                   itemBuilder: (context, index) {
                     final event = events[index];
+                    print(
+                        'HomeScreen: Building ListTile for event: "${event.title}", Key: ${event.key}');
                     return Card(
                       elevation: 3,
                       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -310,19 +426,65 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ListTile(
-                        leading: Icon(getIcon(event.reminderType), color: Colors.purple.shade700),
+                        leading: event.imagePath != null &&
+                                event.imagePath!.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  File(event.imagePath!),
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(_getIcon(event.reminderType),
+                                        color: Colors.purple.shade700);
+                                  },
+                                ),
+                              )
+                            : Icon(_getIcon(event.reminderType),
+                                color: Colors.purple.shade700),
                         title: Text(event.title),
                         subtitle: Text(
                           '${event.dateTime.day.toString().padLeft(2, '0')}/${event.dateTime.month.toString().padLeft(2, '0')}/${event.dateTime.year}',
                         ),
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => add_event_lib.AddEventPage(event: event),
-                            ),
-                          );
+                          // Tapping the ListTile itself also navigates to edit
+                          print(
+                              'HomeScreen: ListTile tapped for event: "${event.title}", Key: ${event.key}');
+                          _navigateToAddEvent(context, eventData,
+                              eventToEdit: event);
                         },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined,
+                                  color: Colors.purple.shade700),
+                              tooltip: 'Edit Event',
+                              onPressed: () {
+                                print(
+                                    'HomeScreen: Edit icon tapped for event: "${event.title}", Key: ${event.key}');
+                                _navigateToAddEvent(context, eventData,
+                                    eventToEdit: event);
+                              },
+                              splashRadius: 20,
+                              hoverColor:
+                                  Colors.purple.shade700.withOpacity(0.1),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.redAccent),
+                              tooltip: 'Delete Event',
+                              onPressed: () {
+                                print(
+                                    'HomeScreen: Delete icon tapped for event: "${event.title}", Key: ${event.key}');
+                                _deleteEvent(context, event, eventData);
+                              },
+                              splashRadius: 20,
+                              hoverColor: Colors.redAccent.withOpacity(0.1),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

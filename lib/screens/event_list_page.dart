@@ -5,7 +5,9 @@ import '../models/event_data.dart';
 import 'add_event_page.dart';
 
 class EventListPage extends StatefulWidget {
-  const EventListPage({Key? key}) : super(key: key);
+  final String? categoryFilter;
+
+  const EventListPage({Key? key, this.categoryFilter}) : super(key: key);
 
   @override
   _EventListPageState createState() => _EventListPageState();
@@ -26,6 +28,8 @@ class _EventListPageState extends State<EventListPage> {
         return Icons.favorite;
       case 'reminder':
         return Icons.notifications_active;
+      case 'other':
+        return Icons.event_note;
       default:
         return Icons.event_note_outlined;
     }
@@ -59,7 +63,11 @@ class _EventListPageState extends State<EventListPage> {
 
   Future<void> _navigateToAddEvent(EventData eventData,
       {Event? eventToEdit}) async {
-    final result = await Navigator.push<Event>(
+    print('EventListPage: Navigating to AddEventPage.');
+    print(
+        'EventListPage: Event to edit (passed to AddEventPage): ${eventToEdit?.title}, Key: ${eventToEdit?.key}');
+
+    final result = await Navigator.push<Map<String, dynamic>?>(
       context,
       MaterialPageRoute(
         builder: (context) => AddEventPage(event: eventToEdit),
@@ -67,26 +75,51 @@ class _EventListPageState extends State<EventListPage> {
     );
 
     if (result != null) {
-      if (eventToEdit != null) {
-        eventData.updateEvent(eventToEdit, result);
+      final newEvent = result['event'] as Event;
+      final oldEventKey = result['key'] as int?;
+      print(
+          'EventListPage: Returned from AddEventPage. New event title: "${newEvent.title}", Old event key received: $oldEventKey');
+
+      if (oldEventKey != null) {
+        // It's an edit operation, use the key to update
+        print(
+            'EventListPage: Calling updateEvent with key: $oldEventKey and new event: "${newEvent.title}"');
+        await eventData.updateEvent(oldEventKey, newEvent);
       } else {
-        eventData.addEvent(result);
+        // It's a new event
+        print(
+            'EventListPage: Calling addEvent for new event: "${newEvent.title}".');
+        await eventData.addEvent(newEvent);
       }
+    } else {
+      print(
+          'EventListPage: Returned from AddEventPage with null result (likely cancelled).');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final eventData = Provider.of<EventData>(context);
-    final allEvents = eventData.getAllEvents();
+    final List<Event> displayedEvents =
+        widget.categoryFilter == null || widget.categoryFilter == 'All Events'
+            ? eventData.getAllEvents()
+            : eventData
+                .getAllEvents()
+                .where((event) =>
+                    event.reminderType.toLowerCase() ==
+                    widget.categoryFilter!.toLowerCase())
+                .toList();
+
     final theme = Theme.of(context);
     final purple = Colors.purple.shade700;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'My Events',
-          style: TextStyle(
+        title: Text(
+          widget.categoryFilter == null || widget.categoryFilter == 'All Events'
+              ? 'My Events'
+              : '${widget.categoryFilter} Events',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: 24,
@@ -102,7 +135,7 @@ class _EventListPageState extends State<EventListPage> {
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-          child: allEvents.isEmpty
+          child: displayedEvents.isEmpty
               ? Text(
                   'No events yet.',
                   style: theme.textTheme.bodyLarge?.copyWith(
@@ -111,10 +144,10 @@ class _EventListPageState extends State<EventListPage> {
                   ),
                 )
               : ListView.separated(
-                  itemCount: allEvents.length,
+                  itemCount: displayedEvents.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final event = allEvents[index];
+                    final event = displayedEvents[index];
                     return Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

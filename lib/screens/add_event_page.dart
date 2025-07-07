@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../models/event.dart';
 
 class AddEventPage extends StatefulWidget {
@@ -19,13 +23,16 @@ class _AddEventPageState extends State<AddEventPage> {
   DateTime? _endDateTime;
   String? _reminderType;
   String? _repeatOption;
+  XFile? _imageFile;
+  String? _currentImagePath;
+  int? _eventKey; // To store the event's Hive key
 
   final List<String> reminderTypes = [
     'Meeting',
     'Birthday',
     'Reminder',
     'Anniversary',
-    'Other', // ✅ Added
+    'Other',
   ];
 
   final List<String> repeatOptions = [
@@ -45,6 +52,17 @@ class _AddEventPageState extends State<AddEventPage> {
       _startDateTime = widget.event!.dateTime;
       _endDateTime = widget.event!.dateTime.add(const Duration(hours: 1));
       _reminderType = widget.event!.reminderType;
+      _currentImagePath = widget.event!.imagePath;
+      _eventKey =
+          widget.event!.key; // ✅ Store the key of the event being edited
+      print(
+          'AddEventPage: Initialized for editing. Passed event: "${widget.event!.title}", Captured Key: $_eventKey');
+      if (_eventKey == null) {
+        print(
+            'AddEventPage: WARNING: widget.event.key is null for an existing event. This might be the root cause.');
+      }
+    } else {
+      print('AddEventPage: Initialized for adding new event (no key yet).');
     }
   }
 
@@ -67,7 +85,30 @@ class _AddEventPageState extends State<AddEventPage> {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
-  void _saveEvent() {
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      _imageFile = image;
+      print('AddEventPage: Image picked: ${_imageFile?.path}');
+    });
+  }
+
+  Future<String?> _saveImageLocally(XFile image) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final String fileName = p.basename(image.path);
+      final String newPath = p.join(directory.path, fileName);
+      final File newImage = await File(image.path).copy(newPath);
+      print('AddEventPage: Image saved locally to: $newPath');
+      return newPath;
+    } catch (e) {
+      print('AddEventPage: Error saving image locally: $e');
+      return null;
+    }
+  }
+
+  void _saveEvent() async {
     if (_formKey.currentState!.validate()) {
       if (_startDateTime == null || _endDateTime == null) {
         _showSnackBar('Please select both start and end date/time.');
@@ -79,15 +120,33 @@ class _AddEventPageState extends State<AddEventPage> {
         return;
       }
 
+      String? finalImagePath = _currentImagePath;
+
+      if (_imageFile != null) {
+        finalImagePath = await _saveImageLocally(_imageFile!);
+        if (finalImagePath == null) {
+          _showSnackBar('Failed to save image.');
+          return;
+        }
+      }
+
       final newEvent = Event(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         dateTime: _startDateTime!,
         reminderType: _reminderType ?? 'Reminder',
+        imagePath: finalImagePath,
       );
 
-      _showSnackBar('Event saved successfully!', isError: false);
-      Navigator.pop(context, newEvent);
+      _showSnackBar(
+          widget.event == null
+              ? 'Event saved successfully!'
+              : 'Event updated successfully!',
+          isError: false);
+      // ✅ Return a Map containing the new event and its original key (if editing)
+      print(
+          'AddEventPage: Preparing to pop. New event title: "${newEvent.title}", Original Key to return: $_eventKey');
+      Navigator.pop(context, {'event': newEvent, 'key': _eventKey});
     }
   }
 
@@ -102,20 +161,21 @@ class _AddEventPageState extends State<AddEventPage> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color.fromARGB(255, 42, 134, 191);
+    // Determine button text based on whether we are editing or adding
+    final String buttonText =
+        widget.event == null ? 'Save Event' : 'Update Event';
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.event == null ? 'Add Event' : 'Edit Event',
           style: const TextStyle(
-            color: Colors.white, // Change title text color here
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.purple.shade700,
-        iconTheme: const IconThemeData(
-            color: Colors.white), // Optional: makes back icon white
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -176,25 +236,115 @@ class _AddEventPageState extends State<AddEventPage> {
                   onChanged: (value) => setState(() => _repeatOption = value),
                   validator: 'Please select repeat option',
                 ),
+                const SizedBox(height: 16),
+                _buildLabel('🖼️ Event Image (Optional)'),
+                Center(
+                  child: Column(
+                    children: [
+                      if (_imageFile != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(_imageFile!.path),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      else if (_currentImagePath != null &&
+                          _currentImagePath!.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(_currentImagePath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(Icons.broken_image,
+                                      size: 50, color: Colors.grey),
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: const Center(
+                            child:
+                                Icon(Icons.image, size: 50, color: Colors.grey),
+                          ),
+                        ),
+                      ElevatedButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.add_photo_alternate),
+                        label: const Text('Add Image'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple.shade50,
+                          foregroundColor: Colors.purple.shade700,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      if (_imageFile != null ||
+                          (_currentImagePath != null &&
+                              _currentImagePath!.isNotEmpty))
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _imageFile = null;
+                              _currentImagePath = null;
+                            });
+                          },
+                          icon: Icon(Icons.clear, color: Colors.red.shade700),
+                          label: Text('Remove Image',
+                              style: TextStyle(color: Colors.red.shade700)),
+                        ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 32),
                 Center(
                   child: ElevatedButton.icon(
                     onPressed: _saveEvent,
                     icon: const Icon(
                       Icons.save,
-                      color: Colors.white, // ✅ Icon color
+                      color: Colors.white,
                     ),
-                    label: const Text(
-                      'Save Event',
-                      style: TextStyle(
+                    label: Text(
+                      // ✅ Dynamic button text
+                      buttonText,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white, // ✅ Text color
+                        color: Colors.white,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.purple.shade700, // ✅ Soft blue background
+                      backgroundColor: Colors.purple.shade700,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 36,
                         vertical: 16,
@@ -215,7 +365,6 @@ class _AddEventPageState extends State<AddEventPage> {
     );
   }
 
-  // Helper Widgets Below
   Widget _buildLabel(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(

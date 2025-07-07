@@ -25,6 +25,24 @@ class _CalendarPageState extends State<CalendarPage> {
     return eventData.getEventsForDay(day);
   }
 
+  // Added _getIcon function for consistency
+  IconData _getIcon(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'birthday':
+        return Icons.cake;
+      case 'meeting':
+        return Icons.business_center;
+      case 'anniversary':
+        return Icons.favorite;
+      case 'reminder':
+        return Icons.notifications_active;
+      case 'other': // Added case for 'Other' category
+        return Icons.event_note; // You can change this icon
+      default:
+        return Icons.event_note_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -131,7 +149,9 @@ class _CalendarPageState extends State<CalendarPage> {
                             ],
                           ),
                           child: ListTile(
-                            leading: Icon(Icons.event_note, color: purple),
+                            // Using the _getIcon function here
+                            leading: Icon(_getIcon(event.reminderType),
+                                color: purple),
                             title: Text(
                               event.title,
                               style: theme.textTheme.titleMedium?.copyWith(
