@@ -75,133 +75,135 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  class HomeScreen extends StatefulWidget {
+    const HomeScreen({super.key});
 
-  // Method to navigate to AddEventPage for adding or editing events
-  void _navigateToAddEvent(BuildContext context, EventData eventData,
-      {Event? eventToEdit}) async {
-    print('HomeScreen: --- Starting _navigateToAddEvent ---');
-    print(
-        'HomeScreen: Passed event to AddEventPage for edit: "${eventToEdit?.title}", Its Key: ${eventToEdit?.key}');
+    @override
+    State<HomeScreen> createState() => _HomeScreenState();
+  }
 
-    final result = await Navigator.push<Map<String, dynamic>?>(
-      context,
-      MaterialPageRoute(
-          builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
-    );
+  class _HomeScreenState extends State<HomeScreen> {
+    void _navigateToAddEvent(BuildContext context, EventData eventData,
+        {Event? eventToEdit}) async {
+      print('HomeScreen: --- Starting _navigateToAddEvent ---');
+      print('HomeScreen: Passed event to AddEventPage for edit: "${eventToEdit?.title}", Its Key: ${eventToEdit?.key}');
 
-    if (result != null) {
-      final newEvent = result['event'] as Event;
-      final oldEventKey = result['key'] as int?;
-      print(
-          'HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
+      final result = await Navigator.push<Map<String, dynamic>?>(
+        context,
+        MaterialPageRoute(
+            builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
+      );
 
-      // Check if we have an old event key to determine if this is an update or add operation 
-  if (oldEventKey != null) {
-        await eventData.updateEvent(oldEventKey, newEvent);
-        showNotification(context, "✅ Event updated successfully!");
-        scheduleInAppNotification(context, newEvent.dateTime,
-            "⏰ It's time for your appointment: ${newEvent.title}");
+      if (result != null) {
+        final newEvent = result['event'] as Event;
+        final oldEventKey = result['key'] as int?;
+        print('HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
+
+        if (oldEventKey != null) {
+          await eventData.updateEvent(oldEventKey, newEvent);
+          showNotification(context, "✅ Event updated successfully!");
+          scheduleInAppNotification(context, newEvent.dateTime,
+              "⏰ It's time for your appointment: ${newEvent.title}");
+        } else {
+          await eventData.addEvent(newEvent);
+          showNotification(context, "🎉 New event added!");
+          scheduleInAppNotification(context, newEvent.dateTime,
+              "⏰ It's time for your appointment: ${newEvent.title}");
+        }
       } else {
-        await eventData.addEvent(newEvent);
-        showNotification(context, "🎉 New event added!");
-        scheduleInAppNotification(context, newEvent.dateTime,
-            "⏰ It's time for your appointment: ${newEvent.title}");
+        print('HomeScreen: Returned from AddEventPage with null result.');
       }
-    } else {
-      print('HomeScreen: Returned from AddEventPage with null result.');
+
+      print('HomeScreen: --- Finished _navigateToAddEvent ---');
     }
 
-    print('HomeScreen: --- Finished _navigateToAddEvent ---');
-  }
-
-  // Method to handle event deletion
-  void _deleteEvent(BuildContext context, Event event, EventData eventData) {
-    print(
-        'HomeScreen: Initiating delete for event: "${event.title}", Key: ${event.key}');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: const Text('Are you sure you want to delete this event?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () {
-              print('HomeScreen: Delete cancelled.');
-              Navigator.of(context).pop();
-            },
-          ),
-          TextButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red.shade700)),
-            onPressed: () {
-              print(
-                  'HomeScreen: Confirmed delete for event: "${event.title}", Key: ${event.key}');
-              eventData.deleteEvent(event);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Event deleted')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showNotification(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-
-    entry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          InAppNotification(
-            message: message,
-            onDismiss: () => entry.remove(),
-          ),
-        ],
-      ),
-    );
-
-    overlay.insert(entry);
-    Future.delayed(Duration(seconds: 3), () => entry.remove());
-  }
-
-  // ✅ NEW: Schedule a notification at event time
-  void scheduleInAppNotification(
-      BuildContext context, DateTime scheduledTime, String message) {
-    final now = DateTime.now();
-    final delay = scheduledTime.difference(now);
-
-    if (delay.inSeconds > 0) {
-      Timer(delay, () {
-        showNotification(context, message);
-      });
-      print("Notification scheduled in ${delay.inSeconds} seconds.");
-    } else {
-      print("Scheduled time already passed. No notification scheduled.");
+    void _deleteEvent(BuildContext context, Event event, EventData eventData) {
+      print('HomeScreen: Initiating delete for event: "${event.title}", Key: ${event.key}');
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Event'),
+          content: const Text('Are you sure you want to delete this event?'),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                print('HomeScreen: Delete cancelled.');
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Colors.red.shade700)),
+              onPressed: () {
+                print('HomeScreen: Confirmed delete for event: "${event.title}", Key: ${event.key}');
+                eventData.deleteEvent(event);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Event deleted')),
+                );
+              },
+            ),
+          ],
+        ),
+      );
     }
-  }
 
-  // Helper function to get icon based on reminder type
-  IconData _getIcon(String? type) {
-    switch (type?.toLowerCase()) {
-      case 'birthday':
-        return Icons.cake;
-      case 'meeting':
-        return Icons.business_center;
-      case 'anniversary':
-        return Icons.favorite;
-      case 'reminder':
-        return Icons.notifications_active;
-      case 'other':
-        return Icons.event_note;
-      default:
-        return Icons.event_note_outlined;
+    void showNotification(BuildContext context, String message) {
+      final overlay = Overlay.of(context);
+      if (overlay == null) {
+        print("⚠️ Overlay is null. Notification can't be shown.");
+        return;
+      }
+
+      late OverlayEntry entry;
+      entry = OverlayEntry(
+        builder: (context) => Stack(
+          children: [
+            InAppNotification(
+              message: message,
+              onDismiss: () => entry.remove(),
+            ),
+          ],
+        ),
+      );
+
+      overlay.insert(entry);
+      Future.delayed(const Duration(seconds: 3), () => entry.remove());
     }
-  }
+
+    void scheduleInAppNotification(BuildContext context, DateTime scheduledTime, String message) {
+      final now = DateTime.now();
+      final delay = scheduledTime.difference(now);
+
+      if (delay.inSeconds > 0) {
+        Timer(delay, () {
+          if (mounted) {
+            showNotification(context, message);
+            print("✅ Notification triggered at ${DateTime.now()}");
+          }
+        });
+        print("⏳ Notification scheduled in ${delay.inSeconds} seconds.");
+      } else {
+        print("⚠️ Scheduled time already passed. No notification scheduled.");
+      }
+    }
+
+    IconData _getIcon(String? type) {
+      switch (type?.toLowerCase()) {
+        case 'birthday':
+          return Icons.cake;
+        case 'meeting':
+          return Icons.business_center;
+        case 'anniversary':
+          return Icons.favorite;
+        case 'reminder':
+          return Icons.notifications_active;
+        case 'other':
+          return Icons.event_note;
+        default:
+          return Icons.event_note_outlined;
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
