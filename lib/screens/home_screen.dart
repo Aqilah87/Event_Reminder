@@ -6,6 +6,8 @@ import 'add_event_page.dart' as add_event_lib;
 import 'calendar_page.dart';
 import '../models/event.dart';
 import '../models/event_data.dart';
+import '../widgets/in_app_noti.dart';
+import 'dart:async'; // ✅ Needed for Timer
 
 class EventSearchDelegate extends SearchDelegate<Event?> {
   final List<Event> events;
@@ -95,21 +97,22 @@ class HomeScreen extends StatelessWidget {
       print(
           'HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
 
-      if (oldEventKey != null) {
-        // It's an edit operation, use the key to update
-        print(
-            'HomeScreen: Identified as UPDATE operation. Calling eventData.updateEvent with oldKey: $oldEventKey');
+      // Check if we have an old event key to determine if this is an update or add operation 
+  if (oldEventKey != null) {
         await eventData.updateEvent(oldEventKey, newEvent);
+        showNotification(context, "✅ Event updated successfully!");
+        scheduleInAppNotification(context, newEvent.dateTime,
+            "⏰ It's time for your appointment: ${newEvent.title}");
       } else {
-        // It's a new event
-        print(
-            'HomeScreen: Identified as ADD operation. Calling eventData.addEvent for new event: "${newEvent.title}".');
         await eventData.addEvent(newEvent);
+        showNotification(context, "🎉 New event added!");
+        scheduleInAppNotification(context, newEvent.dateTime,
+            "⏰ It's time for your appointment: ${newEvent.title}");
       }
     } else {
-      print(
-          'HomeScreen: Returned from AddEventPage with null result (likely cancelled or pop without data).');
+      print('HomeScreen: Returned from AddEventPage with null result.');
     }
+
     print('HomeScreen: --- Finished _navigateToAddEvent ---');
   }
 
@@ -145,6 +148,41 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void showNotification(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          InAppNotification(
+            message: message,
+            onDismiss: () => entry.remove(),
+          ),
+        ],
+      ),
+    );
+
+    overlay.insert(entry);
+    Future.delayed(Duration(seconds: 3), () => entry.remove());
+  }
+
+  // ✅ NEW: Schedule a notification at event time
+  void scheduleInAppNotification(
+      BuildContext context, DateTime scheduledTime, String message) {
+    final now = DateTime.now();
+    final delay = scheduledTime.difference(now);
+
+    if (delay.inSeconds > 0) {
+      Timer(delay, () {
+        showNotification(context, message);
+      });
+      print("Notification scheduled in ${delay.inSeconds} seconds.");
+    } else {
+      print("Scheduled time already passed. No notification scheduled.");
+    }
   }
 
   // Helper function to get icon based on reminder type
