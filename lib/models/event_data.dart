@@ -87,53 +87,15 @@ class EventData extends ChangeNotifier {
     print(
         'EventData: New event details provided: Title: "${newEvent.title}", Description: "${newEvent.description}", ReminderType: "${newEvent.reminderType}", ImagePath: "${newEvent.imagePath}"');
 
-    // Verify if the old key exists in the box before updating
-    final existingEventInBox = box.get(oldEventKey);
-    if (existingEventInBox == null) {
-      print(
-          'EventData: ERROR: No existing event found in Hive box with key: $oldEventKey. Cannot update. This might lead to duplicates if newEvent is added later.');
-      notifyListeners();
-      return;
-    }
-    print(
-        'EventData: Found existing event in Hive box with key $oldEventKey. Its current title: "${existingEventInBox.title}"');
-
     // Perform the update in Hive using put(key, object)
+    // This will overwrite the existing entry at oldEventKey with newEvent's data.
     await box.put(oldEventKey, newEvent);
     print('EventData: Hive box.put($oldEventKey, newEvent) completed.');
 
-    // ✅ CRITICAL FIX: Re-fetch the updated event from the box to ensure the in-memory object
-    // has the correct Hive key and is the exact Hive-managed instance.
-    final updatedEventFromBox = box.get(oldEventKey);
+    // ✅ CRITICAL FIX: After updating in Hive, reload all events to ensure in-memory list is in sync.
+    // This guarantees that the _events list accurately reflects the database.
+    await _loadEvents(); 
 
-    // Update the in-memory list
-    final index = _events.indexWhere((event) => event.key == oldEventKey);
-    if (index != -1) {
-      print(
-          'EventData: Found in-memory event at index $index for key $oldEventKey. Old in-memory title: "${_events[index].title}"');
-      if (updatedEventFromBox != null) {
-        _events[index] =
-            updatedEventFromBox; // Use the object fetched from Hive
-        print(
-            'EventData: In-memory list updated successfully at index $index. New in-memory title: "${_events[index].title}"');
-      } else {
-        // This case should ideally not happen if box.put was successful
-        print(
-            'EventData: WARNING: Failed to retrieve updated event from box after put. Falling back to newEvent object for in-memory update.');
-        _events[index] =
-            newEvent; // Fallback to using the passed newEvent object
-      }
-    } else {
-      print(
-          'EventData: WARNING: Event with key $oldEventKey NOT found in in-memory list. This indicates a sync issue. Adding the updated event as a new entry.');
-      // If not found, add it. This is a fallback for out-of-sync scenarios.
-      if (updatedEventFromBox != null) {
-        _events.add(updatedEventFromBox);
-      } else {
-        _events.add(newEvent);
-      }
-    }
-    notifyListeners();
     print('EventData: notifyListeners() called. --- updateEvent Finished ---');
   }
 }
