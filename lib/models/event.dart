@@ -16,10 +16,14 @@ class Event extends HiveObject {
   @HiveField(3)
   final String reminderType;
 
-Event({
+  @HiveField(4) // ✅ New field for image path
+  final String? imagePath;
+
+  Event({
     required this.title,
     required this.description,
     required this.dateTime,
-    required this.reminderType, 
+    required this.reminderType,
+    this.imagePath, // ✅ Make imagePath optional
   });
 }
