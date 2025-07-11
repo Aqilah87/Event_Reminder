@@ -1,218 +1,263 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'dart:io'; // Import dart:io for File
-import 'event_list_page.dart';
-import 'add_event_page.dart' as add_event_lib;
-import 'calendar_page.dart';
-import '../models/event.dart';
-import '../models/event_data.dart';
-import '../widgets/in_app_noti.dart';
-import 'dart:async'; // Needed for Timer
+  import 'package:flutter/material.dart';
+  import 'package:provider/provider.dart';
+  import 'dart:io'; // Import dart:io for File
+  import 'event_list_page.dart';
+  import 'add_event_page.dart' as add_event_lib;
+  import 'calendar_page.dart';
+  import '../models/event.dart';
+  import '../models/event_data.dart';
+  import '../widgets/in_app_noti.dart'; // ✅ For popup notification
+  import '../widgets/notification_bell.dart'; // ✅ For bell + badge UI
+  import 'dart:async'; // Needed for Timer
 
-class EventSearchDelegate extends SearchDelegate<Event?> {
-  final List<Event> events;
+    // 🔍 EventSearchDelegate class
+    class EventSearchDelegate extends SearchDelegate<Event?> {
+      final List<Event> events;
 
-  EventSearchDelegate(this.events);
+      EventSearchDelegate(this.events);
 
-  @override
-  List<Widget>? buildActions(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: () => query = '',
-      ),
-    ];
-  }
+      @override
+      List<Widget>? buildActions(BuildContext context) {
+        return [
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () => query = '',
+          ),
+        ];
+      }
 
-  @override
-  Widget? buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back),
-      onPressed: () => close(context, null),
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) {
-    final results = events
-        .where(
-            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-
-    return ListView.builder(
-      itemCount: results.length,
-      itemBuilder: (context, index) {
-        final event = results[index];
-        return ListTile(
-          title: Text(event.title),
-          subtitle: Text(event.description ?? ''),
-          onTap: () => close(context, event),
+      @override
+      Widget? buildLeading(BuildContext context) {
+        return IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => close(context, null),
         );
-      },
-    );
-  }
+      }
 
-  @override
-  Widget buildSuggestions(BuildContext context) {
-    final suggestions = events
-        .where(
-            (event) => event.title.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+      @override
+      Widget buildResults(BuildContext context) {
+        final results = events
+            .where((event) =>
+                event.title.toLowerCase().contains(query.toLowerCase()))
+            .toList();
 
-    return ListView.builder(
-      itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        final event = suggestions[index];
-        return ListTile(
-          title: Text(event.title),
-          onTap: () {
-            query = event.title;
-            showResults(context);
+        return ListView.builder(
+          itemCount: results.length,
+          itemBuilder: (context, index) {
+            final event = results[index];
+            return ListTile(
+              title: Text(event.title),
+              subtitle: Text(event.description ?? ''),
+              onTap: () => close(context, event),
+            );
           },
         );
-      },
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  void _navigateToAddEvent(BuildContext context, EventData eventData,
-      {Event? eventToEdit}) async {
-    print('HomeScreen: --- Starting _navigateToAddEvent ---');
-    print(
-        'HomeScreen: Passed event to AddEventPage for edit: "${eventToEdit?.title}", Its Key: ${eventToEdit?.key}');
-
-    final result = await Navigator.push<Map<String, dynamic>?>(
-      context,
-      MaterialPageRoute(
-          builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
-    );
-
-    if (result != null) {
-      final newEvent = result['event'] as Event;
-      final oldEventKey = result['key'] as int?; // This is the key returned from AddEventPage
-      print(
-          'HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
-
-      if (oldEventKey != null) {
-        // If oldEventKey is not null, it means an existing event was edited.
-        // We update the existing event using its original key.
-        await eventData.updateEvent(oldEventKey, newEvent);
-        showNotification(context, "✅ Event updated successfully!");
-        scheduleInAppNotification(context, newEvent.dateTime,
-            "⏰ It's time for your appointment: ${newEvent.title}");
-      } else {
-        // If oldEventKey is null, it means a new event was added.
-        await eventData.addEvent(newEvent);
-        showNotification(context, "🎉 New event added!");
-        scheduleInAppNotification(context, newEvent.dateTime,
-            "⏰ It's time for your appointment: ${newEvent.title}");
       }
-    } else {
-      print('HomeScreen: Returned from AddEventPage with null result.');
+
+      @override
+      Widget buildSuggestions(BuildContext context) {
+        final suggestions = events
+            .where((event) =>
+                event.title.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+
+        return ListView.builder(
+          itemCount: suggestions.length,
+          itemBuilder: (context, index) {
+            final event = suggestions[index];
+            return ListTile(
+              title: Text(event.title),
+              onTap: () {
+                query = event.title;
+                showResults(context);
+              },
+            );
+          },
+        );
+      }
     }
 
-    print('HomeScreen: --- Finished _navigateToAddEvent ---');
-  }
+    // 🏡 HomeScreen widget
+    class HomeScreen extends StatefulWidget {
+      const HomeScreen({super.key});
 
-  void _deleteEvent(BuildContext context, Event event, EventData eventData) {
-    print(
-        'HomeScreen: Initiating delete for event: "${event.title}", Key: ${event.key}');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: const Text('Are you sure you want to delete this event?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () {
-              print('HomeScreen: Delete cancelled.');
-              Navigator.of(context).pop();
-            },
-          ),
-          TextButton(
-            child: Text('Delete', style: TextStyle(color: Colors.red.shade700)),
-            onPressed: () {
-              print(
-                  'HomeScreen: Confirmed delete for event: "${event.title}", Key: ${event.key}');
-              eventData.deleteEvent(event);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Event deleted')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showNotification(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-
-    entry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          InAppNotification(
-            message: message,
-            onDismiss: () => entry.remove(),
-          ),
-        ],
-      ),
-    );
-
-    overlay.insert(entry);
-    Future.delayed(Duration(seconds: 3), () => entry.remove());
-  }
-
-  void scheduleInAppNotification(
-      BuildContext context, DateTime scheduledTime, String message) {
-    final now = DateTime.now();
-    final delay = scheduledTime.difference(now);
-
-    if (delay.inSeconds > 0) {
-      Timer(delay, () {
-        showNotification(context, message);
-      });
-      print("Notification scheduled in ${delay.inSeconds} seconds.");
-    } else {
-      print("Scheduled time already passed. No notification scheduled.");
+      @override
+      State<HomeScreen> createState() => _HomeScreenState();
     }
-  }
 
-  // Helper function to get emoji based on reminder type
-  String _getEmoji(String? type) {
-    switch (type?.toLowerCase()) {
-      case 'birthday':
-        return '🎂';
-      case 'meeting':
-        return '💼';
-      case 'anniversary':
-        return '❤️';
-      case 'reminder':
-        return '🔔';
-      case 'other':
-        return '📝';
-      default:
-        return '🗓️';
+    class _HomeScreenState extends State<HomeScreen> {
+      int _badgeCount = 0;
+
+      void _navigateToAddEvent(BuildContext context, EventData eventData,
+          {Event? eventToEdit}) async {
+        final result = await Navigator.push<Map<String, dynamic>?>(
+          context,
+          MaterialPageRoute(
+              builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
+        );
+
+        if (result != null) {
+          final newEvent = result['event'] as Event;
+          final oldEventKey = result['key'] as int?;
+
+          if (oldEventKey != null) {
+            await eventData.updateEvent(oldEventKey, newEvent);
+            showNotification(context, "✅ Event updated successfully!");
+          } else {
+            await eventData.addEvent(newEvent);
+            showNotification(context, "🎉 New event added!");
+          }
+          scheduleInAppNotification(
+            context,
+            newEvent.dateTime,
+            "⏰ It's time for your appointment: ${newEvent.title}",
+          );
+        }
+      }
+
+      void _deleteEvent(
+          BuildContext context, Event event, EventData eventData) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Event'),
+            content: const Text('Are you sure you want to delete this event?'),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              TextButton(
+                child: Text('Delete',
+                    style: TextStyle(color: Colors.red.shade700)),
+                onPressed: () {
+                  eventData.deleteEvent(event);
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Event deleted')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      }
+
+      void showNotification(BuildContext context, String message) {
+        final overlay = Overlay.of(context);
+        if (overlay == null) {
+          print("⚠️ Overlay is null. Notification can't be shown.");
+          return;
+        }
+
+        late OverlayEntry entry;
+        entry = OverlayEntry(
+          builder: (context) => Stack(
+            children: [
+              InAppNotification(
+                message: message,
+                onDismiss: () => entry.remove(),
+              ),
+            ],
+          ),
+        );
+
+        overlay.insert(entry);
+        Future.delayed(const Duration(seconds: 3), () => entry.remove());
+      }
+
+          void scheduleInAppNotification(BuildContext context, DateTime scheduledTime, String message) {
+            final now = DateTime.now();
+            final delay = scheduledTime.difference(now);
+
+            if (delay.inSeconds > 0) {
+              Timer(delay, () {
+                if (context.mounted) {
+                  showNotification(context, message); // 🎉 Popup muncul
+
+                  setState(() {
+                    _badgeCount += 1; // 🔴 Bubble merah muncul bila waktu sampai
+                  });
+
+                  print("🔔 Bubble muncul — waktu event dah sampai");
+                }
+              });
+
+              print("⏳ Bubble dijadualkan dalam ${delay.inMinutes} minit");
+            } else {
+              print("⚠️ Masa event dah lepas. Tak ada bubble.");
+            }
+          }
+
+      String _getEmoji(String? type) {
+        switch (type?.toLowerCase()) {
+          case 'birthday':
+            return '🎂';
+          case 'meeting':
+            return '💼';
+          case 'anniversary':
+            return '❤️';
+          case 'reminder':
+            return '🔔';
+          case 'other':
+            return '📝';
+          default:
+            return '🗓️';
+        }
+      }
+
+      Widget _buildDrawerItem(BuildContext context, IconData icon, String title,
+          VoidCallback onTap,
+          {Color? iconColor}) {
+        return ListTile(
+          leading: Icon(icon, color: iconColor ?? Colors.black),
+          title: Text(title,
+              style: const TextStyle(fontWeight: FontWeight.w600)),
+          onTap: onTap,
+        );
+      }
+
+    /*@override
+    Widget build(BuildContext context) {
+      final theme = Theme.of(context);
+      final eventData = Provider.of<EventData>(context);
+
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Event Reminder'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: NotificationBell(badgeCount: _badgeCount), // ✅ Bell Icon with badge
+            ),
+          ],
+        ),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () => _navigateToAddEvent(context, eventData),
+            child: const Text("➕ Add Event"),
+          ),
+        ),
+      );
     }
-  }
+  }*/
+
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final eventData = Provider.of<EventData>(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.purple.shade700,
         title: const Text(
-          'Home Screen',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          'Event Reminder',
+          style: TextStyle(
+        fontWeight: FontWeight.bold, //
+          color: Colors.white,
+        ),
         ),
         centerTitle: true,
         leading: Builder(
@@ -221,25 +266,50 @@ class HomeScreen extends StatelessWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              final eventData = Provider.of<EventData>(context, listen: false);
-              showSearch(
-                context: context,
-                delegate: EventSearchDelegate(eventData.events),
-              );
-            },
-          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                final eventData = Provider.of<EventData>(context, listen: false);
+                showSearch(
+                  context: context,
+                  delegate: EventSearchDelegate(eventData.events),
+                );
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _badgeCount = 0; // ✅ Clear bubble when tapped
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("🔔 You've viewed your notifications")),
+                  );
+                },
+                child: NotificationBell(badgeCount: _badgeCount),
+              ),
+            ),
+
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () {
               Navigator.pushNamed(context, '/settings');
             },
           ),
+          IconButton(
+          icon: const Icon(Icons.notifications, color: Colors.white),
+          onPressed: () {
+            // You can replace this with a popover or navigate to notification screen
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('🔔 Notifications tapped')),
+            );
+          },
+          ),
         ],
       ),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -351,6 +421,7 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
@@ -539,16 +610,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDrawerItem(
-      BuildContext context, IconData icon, String title, VoidCallback onTap,
-      {Color? iconColor}) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor ?? Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      onTap: onTap,
     );
   }
 }

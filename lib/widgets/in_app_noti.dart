@@ -20,7 +20,7 @@ class _InAppNotificationState extends State<InAppNotification>
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
-  AnimationController? _lottieController; // Safety with nullable controller
+  AnimationController? _lottieController;
 
   @override
   void initState() {
@@ -47,7 +47,7 @@ class _InAppNotificationState extends State<InAppNotification>
   @override
   void dispose() {
     _slideController.dispose();
-    _lottieController?.dispose(); // Safety dispose
+    _lottieController?.dispose();
     super.dispose();
   }
 
@@ -68,14 +68,11 @@ class _InAppNotificationState extends State<InAppNotification>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.notifications_active,
-                  color: Colors.orange,
-                  size: 32,
-                ),
+                const Icon(Icons.notifications_active,
+                    color: Colors.orange, size: 32),
                 const SizedBox(width: 12),
 
-                // 🎉 Confetti or Balloon Animation
+                // 🎈 Lottie Animation
                 Lottie.asset(
                   'assets/confetti.json',
                   width: 40,
@@ -88,7 +85,6 @@ class _InAppNotificationState extends State<InAppNotification>
                     )..forward();
                   },
                 ),
-
                 const SizedBox(width: 12),
 
                 Expanded(
