@@ -5,6 +5,17 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../models/event.dart';
 
+// Helper extensions for DateTime formatting (as discussed previously)
+extension DateTimeFormatting on DateTime {
+  String toShortDateString() {
+    return '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/${year.toString()}';
+  }
+
+  String toShortTimeString() {
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  }
+}
+
 class AddEventPage extends StatefulWidget {
   final Event? event;
 
@@ -42,6 +53,20 @@ class _AddEventPageState extends State<AddEventPage> {
     'Monthly',
     'Yearly',
   ];
+
+  // Define a consistent text style for form input/selection
+  static const TextStyle _formTextStyle = TextStyle(
+    fontSize: 16, // Consistent font size for inputs
+    color: Colors.black, // Always black for input text
+    // fontFamily: 'YourAppFont', // Uncomment and set if you have a custom font
+  );
+
+  // Define a consistent style for hint text
+  static const TextStyle _hintTextStyle = TextStyle(
+    fontSize: 16, // Same font size as input for alignment
+    color: Colors.grey, // Grey for hints
+    // fontFamily: 'YourAppFont',
+  );
 
   @override
   void initState() {
@@ -172,6 +197,7 @@ class _AddEventPageState extends State<AddEventPage> {
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            // fontFamily: 'YourAppFont', // Consistent font for app bar title
           ),
         ),
         backgroundColor: Colors.purple.shade700,
@@ -300,10 +326,14 @@ class _AddEventPageState extends State<AddEventPage> {
                       ElevatedButton.icon(
                         onPressed: _pickImage,
                         icon: const Icon(Icons.add_photo_alternate),
-                        label: const Text('Add Image'),
+                        label: Text('Add Image',
+                            style: _formTextStyle.copyWith(
+                                color: Colors
+                                    .purple.shade700)), // Use consistent style
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple.shade50,
-                          foregroundColor: Colors.purple.shade700,
+                          foregroundColor: Colors.purple
+                              .shade700, // This sets icon color implicitly
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -321,7 +351,9 @@ class _AddEventPageState extends State<AddEventPage> {
                           },
                           icon: Icon(Icons.clear, color: Colors.red.shade700),
                           label: Text('Remove Image',
-                              style: TextStyle(color: Colors.red.shade700)),
+                              style: _formTextStyle.copyWith(
+                                  color: Colors
+                                      .red.shade700)), // Use consistent style
                         ),
                     ],
                   ),
@@ -341,6 +373,7 @@ class _AddEventPageState extends State<AddEventPage> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        // fontFamily: 'YourAppFont', // Consistent font for save button
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -369,7 +402,12 @@ class _AddEventPageState extends State<AddEventPage> {
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(
           text,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          style: _formTextStyle.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white // White in dark mode
+                : Colors.black,
+          ),
         ),
       );
 
@@ -382,8 +420,10 @@ class _AddEventPageState extends State<AddEventPage> {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      style: _formTextStyle, // Use the consistent text style
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: _hintTextStyle, // Use the consistent hint style
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -405,9 +445,21 @@ class _AddEventPageState extends State<AddEventPage> {
   }) {
     return OutlinedButton(
       onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Theme.of(context)
+            .textTheme
+            .bodyLarge
+            ?.color, // Use theme's default for general button foreground
+      ),
       child: Text(
-        dateTime == null ? label : dateTime.toString(),
-        style: const TextStyle(fontSize: 16),
+        dateTime == null
+            ? label
+            : '${dateTime.toLocal().toShortDateString()} ${dateTime.toLocal().toShortTimeString()}',
+        style: _formTextStyle.copyWith(
+          color: dateTime == null
+              ? Colors.purple.shade700 // Hint color for date/time picker
+              : Colors.black, // Selected date/time color
+        ),
       ),
     );
   }
@@ -426,12 +478,27 @@ class _AddEventPageState extends State<AddEventPage> {
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      hint: Text(hint),
+      hint: Text(
+        hint,
+        style: _hintTextStyle, // Use consistent hint style
+      ),
+      dropdownColor: Theme.of(context).brightness == Brightness.dark
+          ? Colors.grey[850]
+          : Colors.white,
       items: options
-          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .map((item) => DropdownMenuItem(
+                value: item,
+                child: Text(
+                  item,
+                  style:
+                      _formTextStyle, // Use consistent text style for dropdown items
+                ),
+              ))
           .toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? validator : null,
+      style:
+          _formTextStyle, // Use consistent text style for the selected value in the field
     );
   }
 }

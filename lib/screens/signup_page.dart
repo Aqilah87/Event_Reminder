@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/auth_data.dart';
 import 'home_screen.dart';
+import 'login_page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -28,9 +29,11 @@ class _SignUpPageState extends State<SignUpPage> {
           const SnackBar(content: Text('Account created!')),
         );
         Navigator.pushAndRemoveUntil(
+          // Use pushAndRemoveUntil to clear navigation stack
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
+          MaterialPageRoute(
+              builder: (_) => const LoginPage()), // <--- Navigate to LoginPage
+          (route) => false, // This ensures all previous routes are removed
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
