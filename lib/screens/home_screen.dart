@@ -6,6 +6,8 @@ import 'add_event_page.dart' as add_event_lib;
 import 'calendar_page.dart';
 import '../models/event.dart';
 import '../models/event_data.dart';
+import '../widgets/in_app_noti.dart';
+import 'dart:async'; // Needed for Timer
 
 class EventSearchDelegate extends SearchDelegate<Event?> {
   final List<Event> events;
@@ -76,7 +78,6 @@ class EventSearchDelegate extends SearchDelegate<Event?> {
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // Method to navigate to AddEventPage for adding or editing events
   void _navigateToAddEvent(BuildContext context, EventData eventData,
       {Event? eventToEdit}) async {
     print('HomeScreen: --- Starting _navigateToAddEvent ---');
@@ -91,29 +92,31 @@ class HomeScreen extends StatelessWidget {
 
     if (result != null) {
       final newEvent = result['event'] as Event;
-      final oldEventKey = result['key'] as int?;
+      final oldEventKey = result['key'] as int?; // This is the key returned from AddEventPage
       print(
           'HomeScreen: Returned from AddEventPage. New event title: "${newEvent.title}", Original Key received: $oldEventKey');
 
       if (oldEventKey != null) {
-        // It's an edit operation, use the key to update
-        print(
-            'HomeScreen: Identified as UPDATE operation. Calling eventData.updateEvent with oldKey: $oldEventKey');
+        // If oldEventKey is not null, it means an existing event was edited.
+        // We update the existing event using its original key.
         await eventData.updateEvent(oldEventKey, newEvent);
+        showNotification(context, "✅ Event updated successfully!");
+        scheduleInAppNotification(context, newEvent.dateTime,
+            "⏰ It's time for your appointment: ${newEvent.title}");
       } else {
-        // It's a new event
-        print(
-            'HomeScreen: Identified as ADD operation. Calling eventData.addEvent for new event: "${newEvent.title}".');
+        // If oldEventKey is null, it means a new event was added.
         await eventData.addEvent(newEvent);
+        showNotification(context, "🎉 New event added!");
+        scheduleInAppNotification(context, newEvent.dateTime,
+            "⏰ It's time for your appointment: ${newEvent.title}");
       }
     } else {
-      print(
-          'HomeScreen: Returned from AddEventPage with null result (likely cancelled or pop without data).');
+      print('HomeScreen: Returned from AddEventPage with null result.');
     }
+
     print('HomeScreen: --- Finished _navigateToAddEvent ---');
   }
 
-  // Method to handle event deletion
   void _deleteEvent(BuildContext context, Event event, EventData eventData) {
     print(
         'HomeScreen: Initiating delete for event: "${event.title}", Key: ${event.key}');
@@ -147,21 +150,55 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Helper function to get icon based on reminder type
-  IconData _getIcon(String? type) {
+  void showNotification(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          InAppNotification(
+            message: message,
+            onDismiss: () => entry.remove(),
+          ),
+        ],
+      ),
+    );
+
+    overlay.insert(entry);
+    Future.delayed(Duration(seconds: 3), () => entry.remove());
+  }
+
+  void scheduleInAppNotification(
+      BuildContext context, DateTime scheduledTime, String message) {
+    final now = DateTime.now();
+    final delay = scheduledTime.difference(now);
+
+    if (delay.inSeconds > 0) {
+      Timer(delay, () {
+        showNotification(context, message);
+      });
+      print("Notification scheduled in ${delay.inSeconds} seconds.");
+    } else {
+      print("Scheduled time already passed. No notification scheduled.");
+    }
+  }
+
+  // Helper function to get emoji based on reminder type
+  String _getEmoji(String? type) {
     switch (type?.toLowerCase()) {
       case 'birthday':
-        return Icons.cake;
+        return '🎂';
       case 'meeting':
-        return Icons.business_center;
+        return '💼';
       case 'anniversary':
-        return Icons.favorite;
+        return '❤️';
       case 'reminder':
-        return Icons.notifications_active;
+        return '🔔';
       case 'other':
-        return Icons.event_note;
+        return '📝';
       default:
-        return Icons.event_note_outlined;
+        return '🗓️';
     }
   }
 
@@ -426,29 +463,37 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ListTile(
-                        leading: event.imagePath != null &&
-                                event.imagePath!.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(event.imagePath!),
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(_getIcon(event.reminderType),
-                                        color: Colors.purple.shade700);
-                                  },
+                        leading: Text(
+                          _getEmoji(event.reminderType),
+                          style: const TextStyle(fontSize: 24),
+                        ), // Always show emoji as leading
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(event.title), // The event title
+                            if (event.imagePath != null && event.imagePath!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0), // Add some spacing
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(event.imagePath!),
+                                    width: 80, // Adjust size as needed
+                                    height: 80, // Adjust size as needed
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // If image fails to load, simply hide it
+                                      return const SizedBox.shrink(); 
+                                    },
+                                  ),
                                 ),
-                              )
-                            : Icon(_getIcon(event.reminderType),
-                                color: Colors.purple.shade700),
-                        title: Text(event.title),
+                              ),
+                          ],
+                        ),
                         subtitle: Text(
                           '${event.dateTime.day.toString().padLeft(2, '0')}/${event.dateTime.month.toString().padLeft(2, '0')}/${event.dateTime.year}',
                         ),
                         onTap: () {
-                          // Tapping the ListTile itself also navigates to edit
                           print(
                               'HomeScreen: ListTile tapped for event: "${event.title}", Key: ${event.key}');
                           _navigateToAddEvent(context, eventData,
