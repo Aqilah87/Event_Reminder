@@ -13,13 +13,20 @@ class EventData extends ChangeNotifier {
 
   List<Event> getAllEvents() => _events;
 
+  List<Event> getTodayEvents() {
+    final now = DateTime.now();
+    return _events.where((event) =>
+      event.dateTime.year == now.year &&
+      event.dateTime.month == now.month &&
+      event.dateTime.day == now.day).toList();
+  }
+
+  // ✅ Add this below
   List<Event> getEventsForDay(DateTime day) {
-    return _events
-        .where((event) =>
-            event.dateTime.year == day.year &&
-            event.dateTime.month == day.month &&
-            event.dateTime.day == day.day)
-        .toList();
+    return _events.where((event) =>
+      event.dateTime.year == day.year &&
+      event.dateTime.month == day.month &&
+      event.dateTime.day == day.day).toList();
   }
 
   Future<void> _loadEvents() async {

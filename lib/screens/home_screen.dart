@@ -221,7 +221,6 @@
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final eventData = Provider.of<EventData>(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -375,104 +374,207 @@
         ),
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Welcome section
-            Center(
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 160,
-                    child: Image.asset(
-                      'assets/ER.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Welcome to Event Reminder',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Stay on top of your schedule. Easily plan, track, and get notified about your events all in one place.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 16,
-                      color:
-                          theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  ElevatedButton.icon(
-                    onPressed: () => _navigateToAddEvent(context,
-                        Provider.of<EventData>(context, listen: false)),
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text(
-                      'Create New Event',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 16),
-                      backgroundColor: Colors.purple.shade700,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  child: Consumer<EventData>(
+                    builder: (context, eventData, _) {
+                      final theme = Theme.of(context);
+                      final events = List<Event>.from(eventData.events)
+                        ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
-            const SizedBox(height: 30),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'All Events',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.purple.shade700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
+                      final today = DateTime.now();
+                      final todayEvents = events.where((e) =>
+                        e.dateTime.year == today.year &&
+                        e.dateTime.month == today.month &&
+                        e.dateTime.day == today.day
+                      ).toList();
 
-            // Event list
-            Consumer<EventData>(
-              builder: (context, eventData, _) {
-                final events = List<Event>.from(eventData.events)
-                  ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-                if (events.isEmpty) {
-                  return Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Center(
-                        child: Text(
-                          'No events found. Add one to get started!',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.textTheme.bodyMedium?.color
-                                ?.withOpacity(0.7),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // 👋 Welcome section
+                          Center(
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: 160,
+                                  child: Image.asset(
+                                    'assets/ER.png',
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Welcome to Event Reminder',
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Stay on top of your schedule. Easily plan, track, and get notified about your events all in one place.',
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 16,
+                                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.75),
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+                                ElevatedButton.icon(
+                                  onPressed: () => _navigateToAddEvent(context,
+                                      Provider.of<EventData>(context, listen: false)),
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  label: const Text(
+                                    'Create New Event',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                    backgroundColor: Colors.purple.shade700,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          textAlign: TextAlign.center,
+
+                          const SizedBox(height: 30),
+
+                          // 📆 Today’s Event Section
+                          if (todayEvents.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '🗓️ Today\'s Events',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...todayEvents.map((event) => Card(
+                                    child: ListTile(
+                                      leading: const Icon(Icons.event, color: Colors.deepPurple),
+                                      title: Text(event.title),
+                                      subtitle: Text(
+                                        '${event.dateTime.hour.toString().padLeft(2, '0')}:${event.dateTime.minute.toString().padLeft(2, '0')}',
+                                      ),
+                                    ),
+                                  )),
+                                ],
+                              ),
+                            ),
+
+                          const SizedBox(height: 30),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'All Events',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple.shade700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 📋 Full Event List
+                          if (events.isEmpty)
+                            Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: Text(
+                                    'No events found. Add one to get started!',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                            )
+                else
+                Column(
+                  children: events.map((event) {
+                    return Card(
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: Text(
+                          _getEmoji(event.reminderType),
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(event.title),
+                            if (event.imagePath != null && event.imagePath!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(event.imagePath!),
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          '${event.dateTime.day.toString().padLeft(2, '0')}/${event.dateTime.month.toString().padLeft(2, '0')}/${event.dateTime.year}',
+                        ),
+                        onTap: () {
+                          _navigateToAddEvent(context, eventData, eventToEdit: event);
+                        },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined, color: Colors.purple.shade700),
+                              tooltip: 'Edit Event',
+                              onPressed: () {
+                                _navigateToAddEvent(context, eventData, eventToEdit: event);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                              tooltip: 'Delete Event',
+                              onPressed: () {
+                                _deleteEvent(context, event, eventData);
+                              },
+                            ),
+                          ],
                         ),
                       ),
+                    );
+                  }).toList(),
+                ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  );
+                  ); // ✅ Close Scaffold properly here
+                }
                 }
 
-                return ListView.builder(
+                /*return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: events.length,
@@ -565,4 +667,4 @@
       ),
     );
   }
-}
+}*/
