@@ -6,8 +6,6 @@
   import 'calendar_page.dart';
   import '../models/event.dart';
   import '../models/event_data.dart';
-  import '../widgets/in_app_noti.dart'; // ✅ For popup notification
-  import '../widgets/notification_bell.dart'; // ✅ For bell + badge UI
   import 'dart:async'; // Needed for Timer
 
     // 🔍 EventSearchDelegate class
@@ -102,10 +100,10 @@
 
           if (oldEventKey != null) {
             await eventData.updateEvent(oldEventKey, newEvent);
-            showNotification(context, "✅ Event updated successfully!");
-          } else {
-            await eventData.addEvent(newEvent);
-            showNotification(context, "🎉 New event added!");
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("✅ Event updated successfully!")),
+            );
+
           }
           scheduleInAppNotification(
             context,
@@ -143,51 +141,28 @@
         );
       }
 
-      void showNotification(BuildContext context, String message) {
-        final overlay = Overlay.of(context);
-        if (overlay == null) {
-          print("⚠️ Overlay is null. Notification can't be shown.");
-          return;
-        }
+      void scheduleInAppNotification(BuildContext context, DateTime scheduledTime, String message) {
+        final now = DateTime.now();
+        final delay = scheduledTime.difference(now);
 
-        late OverlayEntry entry;
-        entry = OverlayEntry(
-          builder: (context) => Stack(
-            children: [
-              InAppNotification(
-                message: message,
-                onDismiss: () => entry.remove(),
-              ),
-            ],
-          ),
-        );
-
-        overlay.insert(entry);
-        Future.delayed(const Duration(seconds: 3), () => entry.remove());
-      }
-
-          void scheduleInAppNotification(BuildContext context, DateTime scheduledTime, String message) {
-            final now = DateTime.now();
-            final delay = scheduledTime.difference(now);
-
-            if (delay.inSeconds > 0) {
-              Timer(delay, () {
-                if (context.mounted) {
-                  showNotification(context, message); // 🎉 Popup muncul
-
-                  setState(() {
-                    _badgeCount += 1; // 🔴 Bubble merah muncul bila waktu sampai
-                  });
-
-                  print("🔔 Bubble muncul — waktu event dah sampai");
-                }
+        if (delay.inSeconds > 0) {
+          Timer(delay, () {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(message)),
+              );
+              setState(() {
+                _badgeCount += 1;
               });
-
-              print("⏳ Bubble dijadualkan dalam ${delay.inMinutes} minit");
-            } else {
-              print("⚠️ Masa event dah lepas. Tak ada bubble.");
+              print("🔔 Bubble muncul — waktu event dah sampai");
             }
-          }
+          });
+
+          print("⏳ Bubble dijadualkan dalam ${delay.inMinutes} minit");
+        } else {
+          print("⚠️ Masa event dah lepas. Tak ada bubble.");
+        }
+      }
 
       String _getEmoji(String? type) {
         switch (type?.toLowerCase()) {
@@ -250,6 +225,7 @@
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         backgroundColor: Colors.purple.shade700,
         title: const Text(
@@ -266,30 +242,16 @@
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search, color: Colors.white),
-              onPressed: () {
-                final eventData = Provider.of<EventData>(context, listen: false);
-                showSearch(
-                  context: context,
-                  delegate: EventSearchDelegate(eventData.events),
-                );
+                actions: [
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white),
+                  onPressed: () {
+                    final eventData = Provider.of<EventData>(context, listen: false);
+                    showSearch(
+                      context: context,
+                      delegate: EventSearchDelegate(eventData.events),
+                    );
               },
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _badgeCount = 0; // ✅ Clear bubble when tapped
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("🔔 You've viewed your notifications")),
-                  );
-                },
-                child: NotificationBell(badgeCount: _badgeCount),
-              ),
             ),
 
           IconButton(
@@ -297,15 +259,6 @@
             onPressed: () {
               Navigator.pushNamed(context, '/settings');
             },
-          ),
-          IconButton(
-          icon: const Icon(Icons.notifications, color: Colors.white),
-          onPressed: () {
-            // You can replace this with a popover or navigate to notification screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('🔔 Notifications tapped')),
-            );
-          },
           ),
         ],
       ),

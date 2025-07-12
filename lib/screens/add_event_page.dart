@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../models/event.dart';
-import '../widgets/in_app_noti.dart'; // 
 
 // Helper extensions for DateTime formatting (as discussed previously)
 extension DateTimeFormatting on DateTime {
@@ -133,26 +132,6 @@ class _AddEventPageState extends State<AddEventPage> {
     }
   }
 
-  // ✅ NEW: In-app notification method
-  void showNotification(String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-
-    entry = OverlayEntry(
-      builder: (context) => Stack(
-        children: [
-          InAppNotification(
-            message: message,
-            onDismiss: () => entry.remove(),
-          ),
-        ],
-      ),
-    );
-
-    overlay.insert(entry);
-    Future.delayed(Duration(seconds: 3), () => entry.remove());
-  }
-
   void _saveEvent() async {
     if (_formKey.currentState!.validate()) {
       if (_startDateTime == null || _endDateTime == null) {
@@ -173,15 +152,6 @@ class _AddEventPageState extends State<AddEventPage> {
           _showSnackBar('Failed to save image.');
           return;
         }
-      }
-
-      // ✅ Show playful in-app notification if event is today
-      final now = DateTime.now();
-      if (_startDateTime != null &&
-          _startDateTime!.year == now.year &&
-          _startDateTime!.month == now.month &&
-          _startDateTime!.day == now.day) {
-        showNotification("😮 Ohh is it today?");
       }
 
       final newEvent = Event(
