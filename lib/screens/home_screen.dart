@@ -434,7 +434,7 @@
                   SizedBox(
                     height: 160,
                     child: Image.asset(
-                      'assets/logo_reminder-removebg-preview.png',
+                      'assets/ER.png',
                       fit: BoxFit.contain,
                     ),
                   ),
