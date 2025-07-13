@@ -15,8 +15,15 @@ class ViewEventPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Event Details"),
         backgroundColor: Colors.purple.shade700,
+        title: const Text(
+          "Event Details",
+        style: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
