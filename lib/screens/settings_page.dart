@@ -52,18 +52,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     secondary:
                         Icon(Icons.dark_mode, color: theme.iconTheme.color),
                   ),
-                  const Divider(height: 1),
-                  SwitchListTile(
-                    title: const Text('Enable Notifications'),
-                    value: _notificationsEnabled,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _notificationsEnabled = value;
-                      });
-                    },
-                    secondary:
-                        Icon(Icons.notifications, color: theme.iconTheme.color),
-                  ),
                 ],
               ),
             ),

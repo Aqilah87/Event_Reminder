@@ -35,10 +35,13 @@
 
       @override
       Widget buildResults(BuildContext context) {
-        final results = events
-            .where((event) =>
-                event.title.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        final lowerQuery = query.toLowerCase();
+
+        final results = events.where((event) {
+          final titleMatch = event.title.toLowerCase().contains(lowerQuery);
+          final descriptionMatch = event.description?.toLowerCase().contains(lowerQuery) ?? false;
+          return titleMatch || descriptionMatch;
+        }).toList();
 
         return ListView.builder(
           itemCount: results.length,
@@ -54,11 +57,14 @@
       }
 
       @override
-      Widget buildSuggestions(BuildContext context) {
-        final suggestions = events
-            .where((event) =>
-                event.title.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+    Widget buildSuggestions(BuildContext context) {
+        final lowerQuery = query.toLowerCase();
+
+        final suggestions = events.where((event) {
+          final titleMatch = event.title.toLowerCase().contains(lowerQuery);
+          final descriptionMatch = event.description?.toLowerCase().contains(lowerQuery) ?? false;
+          return titleMatch || descriptionMatch;
+        }).toList();
 
         return ListView.builder(
           itemCount: suggestions.length,
@@ -200,32 +206,6 @@
           onTap: onTap,
         );
       }
-
-    /*@override
-    Widget build(BuildContext context) {
-      final theme = Theme.of(context);
-      final eventData = Provider.of<EventData>(context);
-
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Event Reminder'),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: NotificationBell(badgeCount: _badgeCount), // ✅ Bell Icon with badge
-            ),
-          ],
-        ),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => _navigateToAddEvent(context, eventData),
-            child: const Text("➕ Add Event"),
-          ),
-        ),
-      );
-    }
-  }*/
-
 
   @override
   Widget build(BuildContext context) {

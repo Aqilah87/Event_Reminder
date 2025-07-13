@@ -58,7 +58,7 @@ class _SignUpPageState extends State<SignUpPage> {
               children: [
                 // App logo
                 Image.asset(
-                  'assets/logo_reminder-removebg-preview.png',
+                  'assets/ER.png',
                   width: 120,
                   height: 120,
                 ),
