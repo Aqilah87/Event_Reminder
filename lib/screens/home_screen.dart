@@ -7,6 +7,7 @@
   import '../models/event.dart';
   import '../models/event_data.dart';
   import 'dart:async'; // Needed for Timer
+  import '../screens/view_event_page.dart';
 
     // 🔍 EventSearchDelegate class
     class EventSearchDelegate extends SearchDelegate<Event?> {
@@ -91,7 +92,8 @@
         final result = await Navigator.push<Map<String, dynamic>?>(
           context,
           MaterialPageRoute(
-              builder: (_) => add_event_lib.AddEventPage(event: eventToEdit)),
+            builder: (_) => add_event_lib.AddEventPage(event: eventToEdit),
+          ),
         );
 
         if (result != null) {
@@ -103,8 +105,15 @@
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("✅ Event updated successfully!")),
             );
-
+          } else {
+            // ✅ THIS IS THE FIX YOU NEED
+            eventData.addEvent(newEvent);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("🆕 Event added successfully!")),
+            );
           }
+
+          // ✅ Always schedule in-app notification after saving
           scheduleInAppNotification(
             context,
             newEvent.dateTime,
@@ -469,6 +478,26 @@
                               ),
                             ),
 
+                          if (todayEvents.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const SizedBox(height: 8),
+                                Text(
+                                  "🧘 No events scheduled today",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+
                           const SizedBox(height: 30),
                           Align(
                             alignment: Alignment.centerLeft,
@@ -540,7 +569,13 @@
                           '${event.dateTime.day.toString().padLeft(2, '0')}/${event.dateTime.month.toString().padLeft(2, '0')}/${event.dateTime.year}',
                         ),
                         onTap: () {
-                          _navigateToAddEvent(context, eventData, eventToEdit: event);
+                          // ✅ Now opens read-only page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ViewEventPage(event: event),
+                            ),
+                          );
                         },
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,

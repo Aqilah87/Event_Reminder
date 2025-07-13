@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../models/event.dart';
+import '../widgets/in_app_noti.dart';
 
 // Helper extensions for DateTime formatting (as discussed previously)
 extension DateTimeFormatting on DateTime {
@@ -154,6 +155,18 @@ class _AddEventPageState extends State<AddEventPage> {
         }
       }
 
+  // 🧪 Debug logs — helps confirm saving date & behavior
+      print("📅 Start DateTime: $_startDateTime");
+      print("📅 End DateTime: $_endDateTime");
+
+      // 🎉 Optional: Feedback if event is today
+      final now = DateTime.now();
+      if (_startDateTime!.day == now.day &&
+          _startDateTime!.month == now.month &&
+          _startDateTime!.year == now.year) {
+        showNotification("🗓️ This event is happening today!");
+      }
+
       final newEvent = Event(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -163,13 +176,13 @@ class _AddEventPageState extends State<AddEventPage> {
       );
 
       _showSnackBar(
-          widget.event == null
-              ? 'Event saved successfully!'
-              : 'Event updated successfully!',
-          isError: false);
-      // ✅ Return a Map containing the new event and its original key (if editing)
-      print(
-          'AddEventPage: Preparing to pop. New event title: "${newEvent.title}", Original Key to return: $_eventKey');
+        widget.event == null
+            ? 'Event saved successfully!'
+            : 'Event updated successfully!',
+        isError: false,
+      );
+
+      print('✅ Returning to HomeScreen. Title: "${newEvent.title}", Key: $_eventKey');
       Navigator.pop(context, {'event': newEvent, 'key': _eventKey});
     }
   }
@@ -182,6 +195,30 @@ class _AddEventPageState extends State<AddEventPage> {
       ),
     );
   }
+
+  void showNotification(String message) {
+    final overlay = Overlay.of(context);
+    if (overlay == null) {
+      print("⚠️ Overlay is null. Notification can't be shown.");
+      return;
+    }
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          InAppNotification(
+            message: message,
+            onDismiss: () => entry.remove(),
+          ),
+        ],
+      ),
+    );
+
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3), () => entry.remove());
+  }
+
 
   @override
   Widget build(BuildContext context) {
