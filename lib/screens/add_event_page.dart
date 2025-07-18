@@ -43,7 +43,7 @@ class _AddEventPageState extends State<AddEventPage> {
     'Meeting',
     'Birthday',
     'Reminder',
-    'Anniversary',
+    'Exam',
     'Other',
   ];
 

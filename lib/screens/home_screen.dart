@@ -185,8 +185,8 @@
             return '🎂';
           case 'meeting':
             return '💼';
-          case 'anniversary':
-            return '❤️';
+          case 'Exam':
+            return '📚';
           case 'reminder':
             return '🔔';
           case 'other':
@@ -327,13 +327,13 @@
                     ),
                   );
                 }, iconColor: Colors.orange),
-                _buildDrawerItem(context, Icons.favorite, 'Anniversary', () {
+                _buildDrawerItem(context, Icons.schedule, 'Exam', () {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          const EventListPage(categoryFilter: 'Anniversary'),
+                          const EventListPage(categoryFilter: 'Exam'),
                     ),
                   );
                 }, iconColor: Colors.red),

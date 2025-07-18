@@ -24,8 +24,8 @@ class _EventListPageState extends State<EventListPage> {
         return Icons.cake;
       case 'meeting':
         return Icons.business_center;
-      case 'anniversary':
-        return Icons.favorite;
+      case 'Exam':
+        return Icons.schedule;
       case 'reminder':
         return Icons.notifications_active;
       case 'other':

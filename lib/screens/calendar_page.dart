@@ -32,8 +32,8 @@ class _CalendarPageState extends State<CalendarPage> {
         return Icons.cake;
       case 'meeting':
         return Icons.business_center;
-      case 'anniversary':
-        return Icons.favorite;
+      case 'Exam':
+        return Icons.schedule;
       case 'reminder':
         return Icons.notifications_active;
       case 'other': // Added case for 'Other' category
