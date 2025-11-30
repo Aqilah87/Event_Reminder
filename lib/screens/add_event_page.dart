@@ -5,6 +5,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../models/event.dart';
 import '../widgets/in_app_noti.dart';
+// NEW IMPORTS for Location Picking
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'map_page.dart'; // import path ikut struktur anda
+
+
 
 // Helper extensions for DateTime formatting (as discussed previously)
 extension DateTimeFormatting on DateTime {
@@ -38,6 +43,9 @@ class _AddEventPageState extends State<AddEventPage> {
   XFile? _imageFile;
   String? _currentImagePath;
   int? _eventKey; // To store the event's Hive key
+  
+  // NEW STATE VARIABLE for location
+  LatLng? _pickedLocation; 
 
   final List<String> reminderTypes = [
     'Meeting',
@@ -80,6 +88,8 @@ class _AddEventPageState extends State<AddEventPage> {
       _reminderType = widget.event!.reminderType;
       _currentImagePath = widget.event!.imagePath;
       _eventKey = widget.event!.key; // ✅ Store the key of the event being edited
+      // NOTE: If your Event model stored location, you would initialize it here.
+      
       print(
           'AddEventPage: Initialized for editing. Passed event: "${widget.event!.title}", Captured Key: $_eventKey');
       if (_eventKey == null) {
@@ -158,6 +168,9 @@ class _AddEventPageState extends State<AddEventPage> {
   // 🧪 Debug logs — helps confirm saving date & behavior
       print("📅 Start DateTime: $_startDateTime");
       print("📅 End DateTime: $_endDateTime");
+      // 📍 Location Debug Log
+      print("📍 Picked Location: $_pickedLocation");
+
 
       // 🎉 Optional: Feedback if event is today
       final now = DateTime.now();
@@ -173,6 +186,8 @@ class _AddEventPageState extends State<AddEventPage> {
         dateTime: _startDateTime!,
         reminderType: _reminderType ?? 'Reminder',
         imagePath: finalImagePath,
+        // NOTE: If your Event model has a location field (e.g., LatLng),
+        // you would pass _pickedLocation here: location: _pickedLocation,
       );
 
       _showSnackBar(
@@ -298,6 +313,58 @@ class _AddEventPageState extends State<AddEventPage> {
                   onChanged: (value) => setState(() => _repeatOption = value),
                   validator: 'Please select repeat option',
                 ),
+                
+                // NEW LOCATION PICKER WIDGETS
+                const SizedBox(height: 16),
+                _buildLabel('📍 Location (Optional)'),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    // Navigate to MapPage and await the result (LatLng)
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapPage(
+                          // Pass the current picked location as initial location
+                          initialLocation: _pickedLocation,
+                        ),
+                      ),
+                    );
+                    if (result != null && result is LatLng) {
+                      setState(() {
+                        _pickedLocation = result;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.map),
+                  label: Text(
+                    _pickedLocation == null ? 'Pick Location' : 'Change Location',
+                    style: _formTextStyle.copyWith(
+                      color: Colors.purple.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple.shade50,
+                    foregroundColor: Colors.purple.shade700,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+                if (_pickedLocation != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Selected: Lat: ${_pickedLocation!.latitude.toStringAsFixed(4)}, Lng: ${_pickedLocation!.longitude.toStringAsFixed(4)}',
+                      style: _formTextStyle.copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
+                // END NEW LOCATION PICKER WIDGETS
+                
                 const SizedBox(height: 16),
                 _buildLabel('🖼️ Event Image (Optional)'),
                 Center(
