@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reminder_test/theme_provider.dart';
 import '../models/auth_data.dart';
+import '../services/notification_service.dart'; // TAMBAH INI
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -56,6 +57,68 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 16),
+            
+            // TAMBAH SECTION NI UNTUK TEST NOTIFICATION
+            _buildSectionHeader("Test Notification"),
+            Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        await NotificationService.showInstantNotification(
+                          id: 1,
+                          title: '✅ Test Notification',
+                          body: 'Notification berfungsi dengan baik!',
+                        );
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notification sent!')),
+                        );
+                      },
+                      icon: const Icon(Icons.notifications_active),
+                      label: const Text('Test Instant Notification'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        DateTime scheduledTime = DateTime.now().add(const Duration(seconds: 5));
+                        
+                        await NotificationService.scheduleNotification(
+                          id: 2,
+                          title: '⏰ Scheduled Test',
+                          body: 'This notification was scheduled 5 seconds ago!',
+                          scheduledTime: scheduledTime,
+                        );
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notification scheduled in 5 seconds')),
+                        );
+                      },
+                      icon: const Icon(Icons.schedule),
+                      label: const Text('Test Scheduled (5s)'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
             _buildSectionHeader("User Info"),
             Card(
               elevation: 3,

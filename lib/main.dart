@@ -14,9 +14,12 @@ import 'screens/calendar_page.dart';
 import 'screens/home_screen.dart';
 import 'screens/settings_page.dart';
 import 'theme_provider.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService.initialize();
 
   final appDocDir = await path_provider.getApplicationDocumentsDirectory();
   await Hive.initFlutter(appDocDir.path);
