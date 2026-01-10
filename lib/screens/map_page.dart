@@ -1,79 +1,143 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../data/location_service.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapPage extends StatefulWidget {
   final LatLng? initialLocation;
-  MapPage({this.initialLocation});
+
+  const MapPage({Key? key, this.initialLocation}) : super(key: key);
 
   @override
   _MapPageState createState() => _MapPageState();
 }
 
 class _MapPageState extends State<MapPage> {
-  GoogleMapController? _controller;
-  LatLng? _selected;
-  CameraPosition _initialCamera = CameraPosition(target: LatLng(3.1390, 101.6869), zoom: 12); // KL fallback
+  late final MapController _mapController;
+  late LatLng _selectedPosition;
+  bool _isLoading = true;
+
+  // Default to Kuala Lumpur if GPS fails
+  static const LatLng _defaultLocation = LatLng(3.1390, 101.6869);
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialLocation != null) {
-      _selected = widget.initialLocation;
-      _initialCamera = CameraPosition(target: widget.initialLocation!, zoom: 16);
+    _mapController = MapController();
+    _selectedPosition = widget.initialLocation ?? _defaultLocation;
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    // Only fetch location if no initial location was passed
+    if (widget.initialLocation == null) {
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            if (mounted) setState(() => _isLoading = false);
+            return;
+          }
+        }
+
+        if (permission == LocationPermission.deniedForever) {
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+
+        final pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high);
+        
+        if (mounted) {
+          setState(() {
+            _selectedPosition = LatLng(pos.latitude, pos.longitude);
+            _mapController.move(_selectedPosition, 15.0);
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print("Error getting location: $e");
+        if (mounted) setState(() => _isLoading = false);
+      }
     } else {
-      _setToCurrent();
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _setToCurrent() async {
-    try {
-      final pos = await LocationService.getCurrentLocation();
-      setState(() {
-        _initialCamera = CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 16);
-      });
-    } catch (e) {
-      // ignore and use fallback
-    }
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
-  void _onTap(LatLng latLng) {
+  void _handleTap(TapPosition tapPosition, LatLng point) {
     setState(() {
-      _selected = latLng;
+      _selectedPosition = point;
     });
   }
 
-  void _onSave() {
-    if (_selected == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please pick a location on the map')));
-      return;
-    }
-    Navigator.of(context).pop(_selected); // return LatLng
+  void _confirmSelection() {
+    // Return the selected location to the previous screen
+    Navigator.of(context).pop(_selectedPosition);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Select Location'),
+        title: const Text('Pick Location'),
+        backgroundColor: Colors.purple.shade700,
+        foregroundColor: Colors.white,
         actions: [
-          TextButton(
-            onPressed: _onSave,
-            child: Text('Save', style: TextStyle(color: Colors.white)),
-          )
+          TextButton.icon(
+            onPressed: _confirmSelection,
+            icon: const Icon(Icons.check, color: Colors.white),
+            label: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
-      body: GoogleMap(
-        initialCameraPosition: _initialCamera,
-        onMapCreated: (c) => _controller = c,
-        onTap: _onTap,
-        markers: _selected == null
-            ? {}
-            : {
-                Marker(markerId: MarkerId('selected'), position: _selected!)
-              },
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
+      body: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: _selectedPosition,
+          initialZoom: 15.0,
+          onTap: _handleTap,
+        ),
+        children: [
+          TileLayer(
+            // ✅ Using OpenStreetMap tiles (No API Key needed)
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.reminder_test',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: _selectedPosition,
+                width: 50,
+                height: 50,
+                child: const Icon(
+                  Icons.location_pin,
+                  color: Colors.red,
+                  size: 50,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.purple.shade700,
+        child: const Icon(Icons.my_location, color: Colors.white),
+        onPressed: () {
+          _getCurrentLocation();
+        },
       ),
     );
   }

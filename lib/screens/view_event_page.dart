@@ -18,12 +18,13 @@ class ViewEventPage extends StatelessWidget {
         backgroundColor: Colors.purple.shade700,
         title: const Text(
           "Event Details",
-        style: TextStyle(
-        color: Colors.white,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -35,12 +36,17 @@ class ViewEventPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title
                 Text(
-                  "📝 ${event.title}",
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  event.title,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple.shade800,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const Divider(height: 30),
 
+                // Date & Time
                 Row(
                   children: [
                     const Icon(Icons.calendar_today, size: 18, color: Colors.purple),
@@ -58,14 +64,43 @@ class ViewEventPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
+                
+                // Category
+                Row(
+                  children: [
+                    const Icon(Icons.label, size: 18, color: Colors.purple),
+                    const SizedBox(width: 8),
+                    Text("Category: ${event.reminderType}"),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-                if (event.description != null && event.description!.isNotEmpty) ...[
-                  Text("🗒️ Notes", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(event.description!, style: theme.textTheme.bodyMedium),
+                // Location Display (New)
+                if (event.latitude != null && event.longitude != null) ...[
+                   Row(
+                    children: [
+                      const Icon(Icons.location_pin, size: 18, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Location: ${event.latitude!.toStringAsFixed(5)}, ${event.longitude!.toStringAsFixed(5)}",
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                 ],
 
+                // Description
+                if (event.description.isNotEmpty) ...[
+                  Text("🗒️ Notes", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(event.description, style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: 16),
+                ],
+
+                // Image
                 if (event.imagePath != null && event.imagePath!.isNotEmpty)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -75,7 +110,11 @@ class ViewEventPage extends StatelessWidget {
                       height: 200,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return const Text("⚠️ Unable to load image.");
+                        return Container(
+                          height: 150,
+                          color: Colors.grey[200],
+                          child: const Center(child: Text("⚠️ Unable to load image.")),
+                        );
                       },
                     ),
                   ),

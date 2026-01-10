@@ -16,14 +16,23 @@ class Event extends HiveObject {
   @HiveField(3)
   final String reminderType;
 
-  @HiveField(4) // ✅ New field for image path
+  @HiveField(4)
   final String? imagePath;
+
+  // ✅ NEW FIELDS: Store location coordinates
+  @HiveField(5)
+  final double? latitude;
+
+  @HiveField(6)
+  final double? longitude;
 
   Event({
     required this.title,
     required this.description,
     required this.dateTime,
     required this.reminderType,
-    this.imagePath, // ✅ Make imagePath optional
+    this.imagePath,
+    this.latitude,
+    this.longitude,
   });
 }

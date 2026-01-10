@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:provider/provider.dart'; 
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:latlong2/latlong.dart'; 
+
 import '../models/event.dart';
+import '../models/event_data.dart';
 import '../widgets/in_app_noti.dart';
-// NEW IMPORTS for Location Picking
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'map_page.dart'; // import path ikut struktur anda
+// ✅ Import the MapPage file (in the same screens folder)
+import 'map_page.dart'; 
 
-
-
-// Helper extensions for DateTime formatting (as discussed previously)
+// Helper extensions for DateTime formatting
 extension DateTimeFormatting on DateTime {
   String toShortDateString() {
     return '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/${year.toString()}';
@@ -42,9 +43,9 @@ class _AddEventPageState extends State<AddEventPage> {
   String? _repeatOption;
   XFile? _imageFile;
   String? _currentImagePath;
-  int? _eventKey; // To store the event's Hive key
+  int? _eventKey; 
   
-  // NEW STATE VARIABLE for location
+  // ✅ Location State (using latlong2)
   LatLng? _pickedLocation; 
 
   final List<String> reminderTypes = [
@@ -63,18 +64,14 @@ class _AddEventPageState extends State<AddEventPage> {
     'Yearly',
   ];
 
-  // Define a consistent text style for form input/selection
   static const TextStyle _formTextStyle = TextStyle(
-    fontSize: 16, // Consistent font size for inputs
-    color: Colors.black, // Always black for input text
-    // fontFamily: 'YourAppFont', // Uncomment and set if you have a custom font
+    fontSize: 16,
+    color: Colors.black,
   );
 
-  // Define a consistent style for hint text
   static const TextStyle _hintTextStyle = TextStyle(
-    fontSize: 16, // Same font size as input for alignment
-    color: Colors.grey, // Grey for hints
-    // fontFamily: 'YourAppFont',
+    fontSize: 16, 
+    color: Colors.grey, 
   );
 
   @override
@@ -87,17 +84,14 @@ class _AddEventPageState extends State<AddEventPage> {
       _endDateTime = widget.event!.dateTime.add(const Duration(hours: 1));
       _reminderType = widget.event!.reminderType;
       _currentImagePath = widget.event!.imagePath;
-      _eventKey = widget.event!.key; // ✅ Store the key of the event being edited
-      // NOTE: If your Event model stored location, you would initialize it here.
-      
-      print(
-          'AddEventPage: Initialized for editing. Passed event: "${widget.event!.title}", Captured Key: $_eventKey');
-      if (_eventKey == null) {
-        print(
-            'AddEventPage: WARNING: widget.event.key is null for an existing event. This might be the root cause.');
+      _eventKey = widget.event!.key; 
+
+      // ✅ Load existing location if available
+      if (widget.event!.latitude != null && widget.event!.longitude != null) {
+        _pickedLocation = LatLng(widget.event!.latitude!, widget.event!.longitude!);
       }
-    } else {
-      print('AddEventPage: Initialized for adding new event (no key yet).');
+      
+      print('AddEventPage: Initialized for editing. Passed event: "${widget.event!.title}"');
     }
   }
 
@@ -105,15 +99,15 @@ class _AddEventPageState extends State<AddEventPage> {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: now,
+      initialDate: isStart ? (_startDateTime ?? now) : (_endDateTime ?? now),
+      firstDate: DateTime(2000),
       lastDate: DateTime(now.year + 5),
     );
     if (date == null) return null;
 
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: TimeOfDay.fromDateTime(isStart ? (_startDateTime ?? now) : (_endDateTime ?? now)),
     );
     if (time == null) return null;
 
@@ -123,18 +117,19 @@ class _AddEventPageState extends State<AddEventPage> {
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      _imageFile = image;
-      print('AddEventPage: Image picked: ${_imageFile?.path}');
-    });
+    if (image != null) {
+      setState(() {
+        _imageFile = image;
+      });
+    }
   }
 
   Future<String?> _saveImageLocally(XFile image) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
-      final String fileName = p.basename(image.path);
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(image.path)}';
       final String newPath = p.join(directory.path, fileName);
-      final File newImage = await File(image.path).copy(newPath);
+      await File(image.path).copy(newPath);
       print('AddEventPage: Image saved locally to: $newPath');
       return newPath;
     } catch (e) {
@@ -143,20 +138,45 @@ class _AddEventPageState extends State<AddEventPage> {
     }
   }
 
+  // ✅ Updated method to use MapPage (OSM)
+  Future<void> _pickLocation() async {
+    // Navigate to MapPage and await the result (LatLng)
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPage(
+          // Pass the current picked location as initial location so the map opens there
+          initialLocation: _pickedLocation,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _pickedLocation = result;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location updated!")),
+      );
+    }
+  }
+
   void _saveEvent() async {
     if (_formKey.currentState!.validate()) {
-      if (_startDateTime == null || _endDateTime == null) {
-        _showSnackBar('Please select both start and end date/time.');
+      if (_startDateTime == null) {
+        _showSnackBar('Please select at least a start date/time.');
         return;
       }
-
-      if (_endDateTime!.isBefore(_startDateTime!)) {
+      
+      // Basic validation for end time if provided
+      if (_endDateTime != null && _endDateTime!.isBefore(_startDateTime!)) {
         _showSnackBar('End time must be after start time.');
         return;
       }
 
       String? finalImagePath = _currentImagePath;
 
+      // Save new image if picked
       if (_imageFile != null) {
         finalImagePath = await _saveImageLocally(_imageFile!);
         if (finalImagePath == null) {
@@ -164,13 +184,6 @@ class _AddEventPageState extends State<AddEventPage> {
           return;
         }
       }
-
-  // 🧪 Debug logs — helps confirm saving date & behavior
-      print("📅 Start DateTime: $_startDateTime");
-      print("📅 End DateTime: $_endDateTime");
-      // 📍 Location Debug Log
-      print("📍 Picked Location: $_pickedLocation");
-
 
       // 🎉 Optional: Feedback if event is today
       final now = DateTime.now();
@@ -186,9 +199,23 @@ class _AddEventPageState extends State<AddEventPage> {
         dateTime: _startDateTime!,
         reminderType: _reminderType ?? 'Reminder',
         imagePath: finalImagePath,
-        // NOTE: If your Event model has a location field (e.g., LatLng),
-        // you would pass _pickedLocation here: location: _pickedLocation,
+        // ✅ Saving Location
+        latitude: _pickedLocation?.latitude,
+        longitude: _pickedLocation?.longitude,
       );
+
+      // ✅ Integrate with Provider to save to Hive
+      final eventData = Provider.of<EventData>(context, listen: false);
+
+      if (widget.event != null) {
+        // Update existing
+        if (_eventKey != null) {
+           await eventData.updateEvent(_eventKey!, newEvent);
+        }
+      } else {
+        // Add new
+        await eventData.addEvent(newEvent);
+      }
 
       _showSnackBar(
         widget.event == null
@@ -197,8 +224,7 @@ class _AddEventPageState extends State<AddEventPage> {
         isError: false,
       );
 
-      print('✅ Returning to HomeScreen. Title: "${newEvent.title}", Key: $_eventKey');
-      Navigator.pop(context, {'event': newEvent, 'key': _eventKey});
+      Navigator.pop(context);
     }
   }
 
@@ -213,11 +239,6 @@ class _AddEventPageState extends State<AddEventPage> {
 
   void showNotification(String message) {
     final overlay = Overlay.of(context);
-    if (overlay == null) {
-      print("⚠️ Overlay is null. Notification can't be shown.");
-      return;
-    }
-
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (context) => Stack(
@@ -234,10 +255,8 @@ class _AddEventPageState extends State<AddEventPage> {
     Future.delayed(const Duration(seconds: 3), () => entry.remove());
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Determine button text based on whether we are editing or adding
     final String buttonText =
         widget.event == null ? 'Save Event' : 'Update Event';
 
@@ -248,7 +267,6 @@ class _AddEventPageState extends State<AddEventPage> {
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            // fontFamily: 'YourAppFont', // Consistent font for app bar title
           ),
         ),
         backgroundColor: Colors.purple.shade700,
@@ -314,27 +332,11 @@ class _AddEventPageState extends State<AddEventPage> {
                   validator: 'Please select repeat option',
                 ),
                 
-                // NEW LOCATION PICKER WIDGETS
+                // ✅ UPDATED LOCATION PICKER
                 const SizedBox(height: 16),
                 _buildLabel('📍 Location (Optional)'),
                 ElevatedButton.icon(
-                  onPressed: () async {
-                    // Navigate to MapPage and await the result (LatLng)
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MapPage(
-                          // Pass the current picked location as initial location
-                          initialLocation: _pickedLocation,
-                        ),
-                      ),
-                    );
-                    if (result != null && result is LatLng) {
-                      setState(() {
-                        _pickedLocation = result;
-                      });
-                    }
-                  },
+                  onPressed: _pickLocation,
                   icon: const Icon(Icons.map),
                   label: Text(
                     _pickedLocation == null ? 'Pick Location' : 'Change Location',
@@ -363,7 +365,7 @@ class _AddEventPageState extends State<AddEventPage> {
                       style: _formTextStyle.copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                // END NEW LOCATION PICKER WIDGETS
+                // END LOCATION PICKER
                 
                 const SizedBox(height: 16),
                 _buildLabel('🖼️ Event Image (Optional)'),
@@ -432,11 +434,11 @@ class _AddEventPageState extends State<AddEventPage> {
                         label: Text('Add Image',
                             style: _formTextStyle.copyWith(
                                 color: Colors
-                                    .purple.shade700)), // Use consistent style
+                                    .purple.shade700)), 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple.shade50,
                           foregroundColor: Colors.purple
-                              .shade700, // This sets icon color implicitly
+                              .shade700, 
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -456,7 +458,7 @@ class _AddEventPageState extends State<AddEventPage> {
                           label: Text('Remove Image',
                               style: _formTextStyle.copyWith(
                                   color: Colors
-                                      .red.shade700)), // Use consistent style
+                                      .red.shade700)), 
                         ),
                     ],
                   ),
@@ -470,13 +472,11 @@ class _AddEventPageState extends State<AddEventPage> {
                       color: Colors.white,
                     ),
                     label: Text(
-                      // ✅ Dynamic button text
                       buttonText,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        // fontFamily: 'YourAppFont', // Consistent font for save button
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -508,7 +508,7 @@ class _AddEventPageState extends State<AddEventPage> {
           style: _formTextStyle.copyWith(
             fontWeight: FontWeight.w600,
             color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white // White in dark mode
+                ? Colors.white
                 : Colors.black,
           ),
         ),
@@ -523,10 +523,10 @@ class _AddEventPageState extends State<AddEventPage> {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
-      style: _formTextStyle, // Use the consistent text style
+      style: _formTextStyle, 
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: _hintTextStyle, // Use the consistent hint style
+        hintStyle: _hintTextStyle,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -552,7 +552,7 @@ class _AddEventPageState extends State<AddEventPage> {
         foregroundColor: Theme.of(context)
             .textTheme
             .bodyLarge
-            ?.color, // Use theme's default for general button foreground
+            ?.color,
       ),
       child: Text(
         dateTime == null
@@ -560,8 +560,8 @@ class _AddEventPageState extends State<AddEventPage> {
             : '${dateTime.toLocal().toShortDateString()} ${dateTime.toLocal().toShortTimeString()}',
         style: _formTextStyle.copyWith(
           color: dateTime == null
-              ? Colors.purple.shade700 // Hint color for date/time picker
-              : Colors.black, // Selected date/time color
+              ? Colors.purple.shade700 
+              : Colors.black, 
         ),
       ),
     );
@@ -583,7 +583,7 @@ class _AddEventPageState extends State<AddEventPage> {
       ),
       hint: Text(
         hint,
-        style: _hintTextStyle, // Use consistent hint style
+        style: _hintTextStyle,
       ),
       dropdownColor: Theme.of(context).brightness == Brightness.dark
           ? Colors.grey[850]
@@ -594,14 +594,14 @@ class _AddEventPageState extends State<AddEventPage> {
                 child: Text(
                   item,
                   style:
-                      _formTextStyle, // Use consistent text style for dropdown items
+                      _formTextStyle, 
                 ),
               ))
           .toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? validator : null,
       style:
-          _formTextStyle, // Use consistent text style for the selected value in the field
+          _formTextStyle, 
     );
   }
 }
