@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/event.dart';
 import 'dart:io';
+import 'package:latlong2/latlong.dart'; // ✅ Needed for LatLng
+import 'map_page.dart'; // ✅ Needed to navigate to MapPage
 
 class ViewEventPage extends StatelessWidget {
   final Event event;
@@ -75,7 +77,7 @@ class ViewEventPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Location Display (New)
+                // ✅ LOCATION SECTION
                 if (event.latitude != null && event.longitude != null) ...[
                    Row(
                     children: [
@@ -88,6 +90,30 @@ class ViewEventPage extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  // ✅ Button to Open Map
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MapPage(
+                              initialLocation: LatLng(event.latitude!, event.longitude!),
+                              isSelecting: false, // ✅ Set View Only Mode
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.map, color: Colors.white),
+                      label: const Text("View on Map"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
